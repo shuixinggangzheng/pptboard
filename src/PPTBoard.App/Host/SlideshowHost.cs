@@ -304,15 +304,22 @@ public sealed class SlideshowHost : IDisposable
 
         if (!_bridge.CanNavigate) return;
 
-        _nativeEraserOn = !_nativeEraserOn;
-        _bridge.SetNativePointer(_nativeEraserOn ? 3 : 1);
-        _dock?.SetEraserActive(_nativeEraserOn);
         if (_nativeEraserOn)
         {
-            _nativePenOn = false;
-            _dock?.SetPenActive(false);
+            _bridge.SetNativePointer(1);
+            _nativeEraserOn = false;
+            _dock?.SetEraserActive(false);
+            Log.Info("dock eraser -> arrow");
+            return;
         }
-        Log.Info("dock eraser -> native pointer " + (_nativeEraserOn ? 3 : 1));
+
+        // WPS 没有橡皮的 PointerType，使用放映快捷键 Ctrl+E（PowerPoint 同理）
+        Interop.KeyboardInput.SendEraser();
+        _nativeEraserOn = true;
+        _nativePenOn = false;
+        _dock?.SetEraserActive(true);
+        _dock?.SetPenActive(false);
+        Log.Info("dock eraser -> Ctrl+E");
     }
 
     private void ToggleBoard()
@@ -575,7 +582,11 @@ public sealed class SlideshowHost : IDisposable
         _boardOpen = false;
         _ink.CancelActivePointers();
         _ink.SetTool(InkTool.Pen);
-        _nativeEraserOn = false;
+        if (_nativeEraserOn)
+        {
+            _bridge.SetNativePointer(1);
+            _nativeEraserOn = false;
+        }
         _dock?.SetBoardActive(false);
         _dock?.SetEraserActive(false);
         _dock?.SetNavigable(_bridge.CanNavigate);

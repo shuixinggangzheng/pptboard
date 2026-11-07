@@ -78,6 +78,10 @@
 7. 不透明度滑条被裁掉：颜色面板 420→500，滑条区域加大，轨道提亮。
 8. 按钮点击面积：dock 保持 40px 视觉，按最近按钮映射到整条 dock；间隙/内边距也能点中。
 
+## 用户反馈修复（第三轮）
+
+9. 未打开白板时 dock 橡皮无法擦 PPT 笔迹、点击反而翻页：WPS 的 COM 没有橡皮指针类型（官方 PointerType 只有 Arrow/Pen/AutoArrow/None/AlwaysHidden），设 3 会退回自动箭头，点击就翻页。改为发送 WPS 官方放映快捷键 Ctrl+E（PowerPoint 同理）；再点一次用 PointerType=1 回箭头。已确认 WPS 学堂文档：Ctrl+P 绘图笔、Ctrl+E 擦除屏幕绘图。
+
 ## 待办
 
 - 真实桌面/一体机端到端验收（放映、触控、焦点、退出、置顶）
