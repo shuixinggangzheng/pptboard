@@ -17,6 +17,9 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // 没有放映时不创建任何窗口，也不显示 loading；显式控制退出
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
         _singleInstance = new Mutex(true, @"Local\PPTBoard.App.SingleInstance", out bool created);
         if (!created)
         {
@@ -45,6 +48,17 @@ public partial class App : Application
             ? (PPTBoard.Core.Contracts.ISlideshowBridge)new FakeSlideshowBridge()
             : new PPTBoard.Wps.WpsBridge();
         _host = new SlideshowHost(layout, ink, bridge);
+
+        bool fakeShow = Environment.GetEnvironmentVariable("PPTBOARD_DEBUG_FAKE_SHOW") == "1";
+        bool showNow = Log.DebugShow || fakeShow || bridge.IsShowRunning || PPTBoard.Wps.ShowWindowProbe.IsRunning();
+        Log.Info($"startup show active={showNow}");
+
+        if (!showNow)
+        {
+            Log.Info("no show at startup; boot without loader");
+            _ = BootWithoutLoaderAsync();
+            return;
+        }
 
         var loader = new LoadingWindow(layout);
         Log.Info("loader created, showing");
@@ -93,6 +107,41 @@ public partial class App : Application
         catch (Exception ex)
         {
             Log.Error("boot: " + ex);
+            Shutdown();
+        }
+    }
+
+    private async Task BootWithoutLoaderAsync()
+    {
+        try
+        {
+            Log.Info("boot start (no loader)");
+            var init = _host!.InitializeAsync();
+            bool ok;
+            try
+            {
+                ok = await init.WaitAsync(TimeSpan.FromSeconds(3));
+            }
+            catch
+            {
+                ok = false;
+            }
+
+            Log.Info($"init result={ok} (no loader)");
+            if (ok)
+            {
+                _host.Start();
+                Log.Info("host started (no loader)");
+            }
+            else
+            {
+                Log.Info("bridge init failed, exiting");
+                Shutdown();
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error("boot-no-loader: " + ex);
             Shutdown();
         }
     }

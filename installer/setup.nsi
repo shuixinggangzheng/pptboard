@@ -2,7 +2,7 @@ Unicode true
 !include "MUI2.nsh"
 
 !define APPNAME "PPTBoard"
-!define VERSION "0.1.0"
+!define VERSION "0.1.1"
 !define PUBLISHER "shuixinggangzheng"
 
 Name "${APPNAME}"
@@ -23,7 +23,7 @@ BrandingText "${APPNAME} ${VERSION}"
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "SimpChinese"
 
-VIProductVersion "0.1.0.0"
+VIProductVersion "0.1.1.0"
 VIAddVersionKey "ProductName" "${APPNAME}"
 VIAddVersionKey "FileVersion" "${VERSION}"
 VIAddVersionKey "ProductVersion" "${VERSION}"

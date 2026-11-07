@@ -105,9 +105,15 @@
 
 ## 安装包
 
-- `PPTBoard-0.1.0-setup.exe`（NSIS，43.2 MB，无管理员，写入 HKCU 自启 + 应用卸载项）
+- `PPTBoard-0.1.1-setup.exe`（NSIS，43.2 MB，无管理员，写入 HKCU 自启 + 应用卸载项）
 - 已在本机静默安装/卸载各验证一次；当前本机为 setup 安装态。
 - 开发机上的 WPS Office 已按要求卸载（安装目录、自启项、卸载项、COM 类、快捷方式、设置项），`%LOCALAPPDATA%\Kingsoft\WPS Cloud Files` 用户云缓存保留。
+
+## 0.1.1（只在放映时显示 dock）
+
+- 编辑/最大化的 PowerPoint 窗口也有屏幕大小，之前的“按进程找全屏窗口”会误判成放映；现在要求放映窗口无标题栏（WS_CAPTION=0）或类名明确是 screenClass / WPS 放映窗。
+- 启动时如果没有正在放映，不显示 loading、不创建可见窗口；等 F5 放映后再显示 dock。
+- 版本 0.1.1，setup/zip 重新打包。
 
 ## 待办
 

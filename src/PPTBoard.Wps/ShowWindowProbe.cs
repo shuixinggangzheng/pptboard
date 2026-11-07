@@ -28,6 +28,12 @@ public static class ShowWindowProbe
     private static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
 
     [DllImport("user32.dll")]
+    private static extern int GetWindowLong(IntPtr hWnd, int index);
+
+    private const int GWL_STYLE = -16;
+    private const int WS_CAPTION = 0x00C00000;
+
+    [DllImport("user32.dll")]
     private static extern int GetSystemMetrics(int index);
 
     [StructLayout(LayoutKind.Sequential)]
@@ -78,7 +84,11 @@ public static class ShowWindowProbe
             bool wpsShow = cls == "Qt5QWindowIcon" && text.StartsWith("WPS Presentation Slide Show", StringComparison.OrdinalIgnoreCase);
             bool pptShow = cls == "screenClass";
 
-            if (!officeWindow && !wpsShow && !pptShow) return true;
+            // 编辑窗口（最大化）也有屏幕大小，但有标题栏；放映窗口是无边框的
+            bool captionless = (GetWindowLong(hWnd, GWL_STYLE) & WS_CAPTION) == 0;
+            bool showWindow = wpsShow || pptShow || (officeWindow && captionless);
+
+            if (!showWindow) return true;
 
             if (GetWindowRect(hWnd, out var rect))
             {
