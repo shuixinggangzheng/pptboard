@@ -45,8 +45,8 @@ public sealed class InkDocument
         if (index < 0 || index >= _pages.Count) return false;
 
         _pages.RemoveAt(index);
+        if (index < _current) _current--;
         if (_current >= _pages.Count) _current = _pages.Count - 1;
-        if (_current > index) _current--;
         if (_current < 0) _current = 0;
         Reindex();
         PagesChanged?.Invoke();

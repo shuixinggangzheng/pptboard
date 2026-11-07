@@ -1,4 +1,4 @@
-PPTBoard - WPS 演示白板浮层
+PPTBoard - WPS 演示 / PowerPoint 白板浮层
 ================================
 
 安装
@@ -7,7 +7,7 @@ PPTBoard - WPS 演示白板浮层
 2. 双击 install.bat。
    它会把程序复制到 %LOCALAPPDATA%\PPTBoard，写入当前用户的开机自启项，
    并启动后台监听进程 PPTBoardWatcher.exe。
-3. 打开一个 .pptx（用 WPS 演示），按 F5 进入放映。
+3. 打开一个 .pptx（WPS 演示或 Microsoft PowerPoint），按 F5 进入放映。
    屏幕底部会出现 dock；点 dock 里的画板按钮拉下白板。
 
 使用

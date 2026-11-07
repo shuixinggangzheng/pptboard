@@ -36,6 +36,7 @@ public sealed class SlideshowHost : IDisposable
     private bool _lastBridgeAvailable;
     private string? _lastBridgeError;
     private string? _lastBridgeDiagnostics;
+    private bool _windowFallbackLogged;
     private int _wpsMissingTicks;
     private bool _disposed;
 
@@ -98,7 +99,15 @@ public sealed class SlideshowHost : IDisposable
     private void PollShow()
     {
         if (_disposed) return;
-        bool running = _bridge.IsShowRunning;
+        bool comRunning = _bridge.IsShowRunning;
+        bool windowRunning = PPTBoard.Wps.ShowWindowProbe.IsRunning();
+        bool running = comRunning || windowRunning;
+        if (windowRunning && !comRunning && !_windowFallbackLogged)
+        {
+            _windowFallbackLogged = true;
+            Log.Info("slideshow detected by window fallback (COM unavailable)");
+        }
+        if (!running) _windowFallbackLogged = false;
 
         if (_bridge.IsAvailable != _lastBridgeAvailable)
         {
