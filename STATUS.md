@@ -58,6 +58,12 @@
 所以 dock 无法在沙盒里被拉起。默认桌面上 --com 能连到 3 页文档。
 第 3/6/10/11/15 项需要在真实桌面或一体机上验。
 
+## 交付
+
+- GitHub 公开仓库：https://github.com/shuixinggangzheng/pptboard（public，MIT）
+- F:\PPTBoard 已暂存：source/ + dist/PPTBoard-0.1.0-win-x64.zip + STATUS/SPEC/README
+- 验收完成后更新最终版本号与发布包
+
 ## 待办
 
 - 真实桌面/一体机端到端验收（放映、触控、焦点、退出、置顶）

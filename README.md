@@ -40,6 +40,11 @@ WPS 演示 / Microsoft PowerPoint 的放映浮层：底部半透明 dock + 可�
     dotnet run --project tools/PPTBoard.Render -- --com
     artifacts\PPTBoard\PPTBoardWatcher.exe /verify
 
+## 仓库
+
+- GitHub：https://github.com/shuixinggangzheng/pptboard
+- 发布包：F:\PPTBoard\dist\PPTBoard-0.1.0-win-x64.zip（暂存，验收后定版）
+
 ## 许可证
 
 MIT
