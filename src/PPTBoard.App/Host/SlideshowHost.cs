@@ -33,6 +33,9 @@ public sealed class SlideshowHost : IDisposable
     private DispatcherTimer? _boardAnim;
     private bool _boardOpen;
     private bool _nativePenOn;
+    private bool _lastBridgeAvailable;
+    private string? _lastBridgeError;
+    private string? _lastBridgeDiagnostics;
     private int _wpsMissingTicks;
     private bool _disposed;
 
@@ -96,6 +99,29 @@ public sealed class SlideshowHost : IDisposable
     {
         if (_disposed) return;
         bool running = _bridge.IsShowRunning;
+
+        if (_bridge.IsAvailable != _lastBridgeAvailable)
+        {
+            _lastBridgeAvailable = _bridge.IsAvailable;
+            Log.Info($"bridge available={_lastBridgeAvailable}");
+        }
+
+        if (_bridge is PPTBoard.Wps.WpsBridge wpsBridge)
+        {
+            var error = wpsBridge.LastError;
+            if (error is not null && error != _lastBridgeError)
+            {
+                _lastBridgeError = error;
+                Log.Info("bridge: " + error);
+            }
+
+            if (!running && wpsBridge.Diagnostics.Length > 0 && wpsBridge.Diagnostics != _lastBridgeDiagnostics)
+            {
+                _lastBridgeDiagnostics = wpsBridge.Diagnostics;
+                Log.Info("bridge diag: " + wpsBridge.Diagnostics);
+            }
+        }
+
         bool shouldShow = Log.DebugShow || running;
 
         if (_dock is not null)
@@ -126,7 +152,9 @@ public sealed class SlideshowHost : IDisposable
     {
         if (_disposed || Log.DebugShow) return;
 
-        if (Process.GetProcessesByName("wpp").Length > 0)
+        bool wpsRunning = Process.GetProcessesByName("wpp").Length > 0;
+        bool powerpointRunning = Process.GetProcessesByName("POWERPNT").Length > 0;
+        if (wpsRunning || powerpointRunning)
         {
             _wpsMissingTicks = 0;
             return;
@@ -134,7 +162,7 @@ public sealed class SlideshowHost : IDisposable
 
         if (++_wpsMissingTicks >= 2)
         {
-            Log.Info("wpp.exe gone, shutdown");
+            Log.Info("WPS/PowerPoint gone, shutdown");
             Application.Current.Shutdown();
         }
     }

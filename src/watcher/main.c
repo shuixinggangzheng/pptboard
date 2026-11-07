@@ -3,6 +3,7 @@
 
 #define OVERLAY_EXE L"PPTBoard.exe"
 #define WPS_EXE L"wpp.exe"
+#define PPT_EXE L"POWERPNT.EXE"
 #define MAX_RESTARTS 3
 #define RESTART_DELAY_MS 2000
 #define POLL_MS 1000
@@ -53,9 +54,10 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE previous, LPWSTR commandLine, 
     BOOL verify = commandLine != NULL && wcsstr(commandLine, L"/verify") != NULL;
     if (verify)
     {
-        BOOL found = ProcessExists(WPS_EXE);
-        LogInfo(L"verify: wpp.exe=%d", found ? 1 : 0);
-        return found ? 0 : 1;
+        BOOL wpp = ProcessExists(WPS_EXE);
+        BOOL ppt = ProcessExists(PPT_EXE);
+        LogInfo(L"verify: wpp.exe=%d POWERPNT.EXE=%d", wpp ? 1 : 0, ppt ? 1 : 0);
+        return (wpp || ppt) ? 0 : 1;
     }
 
     LogInfo(L"watcher start, overlay=%s", g_overlay);
@@ -68,7 +70,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE previous, LPWSTR commandLine, 
 
     for (;;)
     {
-        BOOL wpsRunning = ProcessExists(WPS_EXE);
+        BOOL wpsRunning = ProcessExists(WPS_EXE) || ProcessExists(PPT_EXE);
 
         if (wpsRunning && overlayProcess == NULL && !giveUp)
         {

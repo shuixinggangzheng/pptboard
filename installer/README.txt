@@ -33,5 +33,5 @@ PPTBoard - WPS 演示白板浮层
 注意
 ----
 - 需要 Windows 10 x64。
-- 只支持 WPS 演示（wpp.exe）；不支持 Microsoft PowerPoint。
+- 支持 WPS 演示（wpp.exe）和 Microsoft PowerPoint（POWERPNT.EXE）。
 - 自包含发布，不需要单独安装 .NET 运行时。

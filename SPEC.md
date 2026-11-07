@@ -390,9 +390,11 @@ WPS 放映时，在屏幕上浮出一套半透明 dock 与一块可翻页的白�
 
 ---
 
-## 15. WPS 集成与降级（2026-11-07 实测）
+## 15. WPS / PowerPoint 集成与降级（2026-11-07 实测）
 
 实测环境：WPS Office 12.1.0.29161（个人版，per-user 安装于 %LOCALAPPDATA%\Kingsoft\WPS Office\12.1.0.29161\office6）。
+
+补充（用户反馈后追加）：同时支持 Microsoft PowerPoint。ProgID 依次尝试 PowerPoint.Application、KWPP.Application；监听器同时检测 POWERPNT.EXE；浮层的退出轮询也认两者。
 
 | 能力 | COM（实测） | 降级 |
 |---|---|---|
@@ -466,7 +468,7 @@ WPS 放映时，在屏幕上浮出一套半透明 dock 与一块可翻页的白�
 | Q15 | dock 按钮 | 6 个：颜色点、上一页、下一页、笔、画板、结束放映（黑屏删除） |
 | Q16 | “笔”行为 | 切换 WPS 原生笔，长按二级菜单（A） |
 | Q17 | 生命周期 | 进程级拉起 + 放映级显示（A） |
-| Q18 | Office/WPS | 只做 WPS，允许开发机装 WPS（C） |
+| Q18 | Office/WPS | 原定只做 WPS（C）；后续按用户反馈追加 Microsoft PowerPoint 支持 |
 | Q19 | 技术栈 | C# WPF + C 监听器（A） |
 | Q20 | 内容寿命 | 仅本次 WPS 进程会话（A） |
 | Q21 | 交付 | 绿色 zip + install/uninstall，x64（A） |

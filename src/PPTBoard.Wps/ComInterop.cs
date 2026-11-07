@@ -39,10 +39,18 @@ internal static class ComInterop
     /// <summary>找不到 KWPP.Application 时，从 ROT 里找已打开的 pptx 文档 moniker。</summary>
     public static object? TryGetPresentationFromRot()
     {
+        var list = GetPresentationsFromRot();
+        return list.Count > 0 ? list[0] : null;
+    }
+
+    /// <summary>ROT 里所有已打开演示文稿的 moniker 对象。</summary>
+    public static List<object> GetPresentationsFromRot()
+    {
+        var result = new List<object>();
         try
         {
-            if (GetRunningObjectTable(0, out var table) != 0) return null;
-            if (CreateBindCtx(0, out var context) != 0) return null;
+            if (GetRunningObjectTable(0, out var table) != 0) return result;
+            if (CreateBindCtx(0, out var context) != 0) return result;
 
             table.EnumRunning(out var enumerator);
             var monikers = new IMoniker[1];
@@ -56,7 +64,7 @@ internal static class ComInterop
                     if (!IsPresentationPath(name)) continue;
 
                     table.GetObject(monikers[0], out object presentation);
-                    if (presentation is not null) return presentation;
+                    if (presentation is not null) result.Add(presentation);
                 }
                 catch
                 {
@@ -66,10 +74,10 @@ internal static class ComInterop
         }
         catch
         {
-            // ROT 不可用时返回 null
+            // ROT 不可用时返回空
         }
 
-        return null;
+        return result;
     }
 
     public static object? GetByPath(string path)
