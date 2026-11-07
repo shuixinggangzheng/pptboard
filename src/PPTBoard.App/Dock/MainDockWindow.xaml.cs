@@ -28,6 +28,7 @@ public partial class MainDockWindow : OverlayWindow
         Left = layout.MainDock.X;
         Top = layout.MainDock.Y;
         MouseLeftButtonDown += (_, e) => Log.Info($"dock mouse down at {e.GetPosition(this)}");
+        PreviewMouseLeftButtonDown += OnDockPreviewDown;
 
         var hold = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         hold.Tick += (_, _) =>
@@ -43,6 +44,38 @@ public partial class MainDockWindow : OverlayWindow
         };
         PenButton.PreviewMouseLeftButtonUp += (_, _) => hold.Stop();
         PenButton.MouseLeave += (_, _) => hold.Stop();
+    }
+
+    /// <summary>不改变视觉尺寸，只把点击目标扩到整条 dock：按最近的按钮触发。</summary>
+    private void OnDockPreviewDown(object sender, MouseButtonEventArgs e)
+    {
+        var p = e.GetPosition(this);
+        if (p.Y < 0 || p.Y > Height) return;
+
+        // 笔按钮保留自己的长按逻辑，不参与就近映射
+        var penOrigin = PenButton.TransformToAncestor(this).Transform(new Point(0, 0));
+        if (p.X >= penOrigin.X && p.X <= penOrigin.X + PenButton.ActualWidth &&
+            p.Y >= penOrigin.Y && p.Y <= penOrigin.Y + PenButton.ActualHeight)
+            return;
+
+        System.Windows.Controls.Button? nearest = null;
+        double nearestDistance = double.MaxValue;
+        foreach (var button in new[] { ColorButton, PrevButton, NextButton, EraserButton, BoardButton, EndButton })
+        {
+            if (!button.IsEnabled) continue;
+            var origin = button.TransformToAncestor(this).Transform(new Point(0, 0));
+            double centerX = origin.X + button.ActualWidth / 2;
+            double distance = Math.Abs(p.X - centerX);
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearest = button;
+            }
+        }
+
+        if (nearest is null || nearestDistance > 30) return;
+        nearest.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+        e.Handled = true;
     }
 
     public void SetColor(InkColor color)

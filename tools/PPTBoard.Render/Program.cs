@@ -47,7 +47,7 @@ internal static class Program
         RenderContent(new MainDockWindow(layout), 332, 40, Path.Combine(outDir, "dock.png"));
         RenderContent(new PenDockWindow(layout, engine), 666, 56, Path.Combine(outDir, "pen-dock.png"));
         RenderContent(new BoardWindow(layout, engine), 1664, 984, Path.Combine(outDir, "board.png"));
-        RenderContent(new ColorPanelWindow(layout), 340, 420, Path.Combine(outDir, "color-panel.png"));
+        RenderContent(new ColorPanelWindow(layout), 340, 500, Path.Combine(outDir, "color-panel.png"));
         RenderContent(new ClearSliderWindow(layout), 400, 44, Path.Combine(outDir, "clear-slider.png"));
 
         var menu = new PageMenuWindow(layout, engine);

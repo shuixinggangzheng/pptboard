@@ -68,7 +68,7 @@ public sealed record LayoutSpec(
             44);
 
         const double panelWidth = 340;
-        const double panelHeight = 420;
+        const double panelHeight = 500;
         double dotCenterX = mainDock.X + 14 + 20;
         double panelX = Math.Clamp(dotCenterX - panelWidth / 2, 12, screenWidth - panelWidth - 12);
         double panelY = Math.Max(12, mainDock.Y - 12 - panelHeight);

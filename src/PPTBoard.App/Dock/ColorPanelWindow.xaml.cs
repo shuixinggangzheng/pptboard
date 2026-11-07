@@ -30,18 +30,7 @@ public partial class ColorPanelWindow : OverlayWindow
 
     public void Open(InkColor initial, RectD anchor)
     {
-        var (h, _, _) = ColorMath.RgbToHsv(initial.R, initial.G, initial.B);
-        _hue = h;
-        _brightness = 50;
-        _alpha = initial.A * 100.0 / 255.0;
-
-        _syncing = true;
-        Wheel.Hue = _hue;
-        BrightnessSlider.Value = _brightness;
-        AlphaSlider.Value = _alpha;
-        BrightnessText.Text = $"{_brightness:0}%";
-        AlphaText.Text = $"{_alpha:0}%";
-        _syncing = false;
+        LoadColor(initial, emit: false);
 
         double width = Width;
         double height = Height;
@@ -70,6 +59,35 @@ public partial class ColorPanelWindow : OverlayWindow
         _alpha = e.NewValue;
         AlphaText.Text = $"{_alpha:0}%";
         Emit();
+    }
+
+    private void OnPresetRed(object sender, RoutedEventArgs e) => ApplyPreset(InkColor.Red);
+    private void OnPresetBlue(object sender, RoutedEventArgs e) => ApplyPreset(InkColor.Blue);
+    private void OnPresetBlack(object sender, RoutedEventArgs e) => ApplyPreset(InkColor.Black);
+
+    private void ApplyPreset(InkColor color)
+    {
+        LoadColor(color, emit: true);
+    }
+
+    private void LoadColor(InkColor color, bool emit)
+    {
+        var (h, s, v) = ColorMath.RgbToHsv(color.R, color.G, color.B);
+        _hue = h;
+        // 0=黑，50=色相本色，100=白；与 WithBrightness 的模型对齐
+        _brightness = v <= 0.01 ? 0 : (s <= 0.01 && v >= 0.99 ? 100 : 50);
+        _alpha = Math.Clamp(color.A * 100.0 / 255.0, 10, 100);
+
+        _syncing = true;
+        Wheel.Hue = _hue;
+        BrightnessSlider.Value = _brightness;
+        AlphaSlider.Value = _alpha;
+        BrightnessText.Text = $"{_brightness:0}%";
+        AlphaText.Text = $"{_alpha:0}%";
+        _syncing = false;
+
+        UpdatePreview();
+        if (emit) Emit();
     }
 
     private void OnDoneClick(object sender, RoutedEventArgs e) => Hide();

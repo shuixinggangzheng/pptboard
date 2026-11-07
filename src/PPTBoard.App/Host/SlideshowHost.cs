@@ -34,6 +34,7 @@ public sealed class SlideshowHost : IDisposable
     private DispatcherTimer? _boardAnim;
     private bool _boardOpen;
     private bool _nativePenOn;
+    private bool _nativeEraserOn;
     private bool _lastBridgeAvailable;
     private string? _lastBridgeError;
     private string? _lastBridgeDiagnostics;
@@ -186,10 +187,12 @@ public sealed class SlideshowHost : IDisposable
             _dock.SetEndEnabled(pptEnabled && _bridge.CanNavigate);
         }
 
-        if (!running && _nativePenOn)
+        if (!running && (_nativePenOn || _nativeEraserOn))
         {
             _nativePenOn = false;
+            _nativeEraserOn = false;
             _dock?.SetPenActive(false);
+            _dock?.SetEraserActive(false);
         }
 
         if (shouldShow)
@@ -289,17 +292,27 @@ public sealed class SlideshowHost : IDisposable
 
     private void ToggleEraser()
     {
-        if (_ink.Tool == InkTool.Eraser)
+        // 画板开着时控制白板橡皮；画板关着时控制放映原生橡皮，绝不自动打开画板
+        if (_boardOpen)
         {
-            _ink.SetTool(InkTool.Pen);
-            _dock?.SetEraserActive(false);
+            bool erasing = _ink.Tool == InkTool.Eraser;
+            _ink.SetTool(erasing ? InkTool.Pen : InkTool.Eraser);
+            _dock?.SetEraserActive(!erasing);
+            Log.Info("dock eraser -> whiteboard " + (erasing ? "pen" : "eraser"));
             return;
         }
 
-        if (!_boardOpen) OpenBoard();
-        _ink.SetTool(InkTool.Eraser);
-        _dock?.SetEraserActive(true);
-        Log.Info("dock eraser -> eraser tool");
+        if (!_bridge.CanNavigate) return;
+
+        _nativeEraserOn = !_nativeEraserOn;
+        _bridge.SetNativePointer(_nativeEraserOn ? 3 : 1);
+        _dock?.SetEraserActive(_nativeEraserOn);
+        if (_nativeEraserOn)
+        {
+            _nativePenOn = false;
+            _dock?.SetPenActive(false);
+        }
+        Log.Info("dock eraser -> native pointer " + (_nativeEraserOn ? 3 : 1));
     }
 
     private void ToggleBoard()
@@ -411,7 +424,12 @@ public sealed class SlideshowHost : IDisposable
         if (!_bridge.NativePenSupported) return;
         _nativePenOn = !_nativePenOn;
         _bridge.SetNativePen(_nativePenOn);
-        if (_nativePenOn) _bridge.SetNativePenColor(_ink.Style.Color);
+        if (_nativePenOn)
+        {
+            _bridge.SetNativePenColor(_ink.Style.Color);
+            _nativeEraserOn = false;
+            _dock?.SetEraserActive(false);
+        }
         _dock?.SetPenActive(_nativePenOn);
     }
 
@@ -557,6 +575,7 @@ public sealed class SlideshowHost : IDisposable
         _boardOpen = false;
         _ink.CancelActivePointers();
         _ink.SetTool(InkTool.Pen);
+        _nativeEraserOn = false;
         _dock?.SetBoardActive(false);
         _dock?.SetEraserActive(false);
         _dock?.SetNavigable(_bridge.CanNavigate);

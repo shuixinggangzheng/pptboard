@@ -3,19 +3,32 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:host="clr-namespace:PPTBoard.App.Host"
                     xmlns:board="clr-namespace:PPTBoard.App.Board"
-                    Width="340" Height="420">
+                    Width="340" Height="500">
     <Border Background="{StaticResource GlassBrush}" BorderBrush="{StaticResource GlassBorderBrush}"
             BorderThickness="1" CornerRadius="12">
         <Grid Margin="20,16">
             <Grid.RowDefinitions>
+                <RowDefinition Height="36"/>
                 <RowDefinition Height="240"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="40"/>
             </Grid.RowDefinitions>
 
-            <board:HueWheel x:Name="Wheel" Grid.Row="0" Width="240" Height="240" HorizontalAlignment="Center"/>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Button x:Name="PresetRed" Width="36" Height="36" Style="{StaticResource PenColorButtonStyle}" Click="OnPresetRed">
+                    <Ellipse Width="22" Height="22" Fill="#FFE53935" Stroke="#55FFFFFF" StrokeThickness="1"/>
+                </Button>
+                <Button x:Name="PresetBlue" Width="36" Height="36" Margin="8,0,0,0" Style="{StaticResource PenColorButtonStyle}" Click="OnPresetBlue">
+                    <Ellipse Width="22" Height="22" Fill="#FF1E88E5" Stroke="#55FFFFFF" StrokeThickness="1"/>
+                </Button>
+                <Button x:Name="PresetBlack" Width="36" Height="36" Margin="8,0,0,0" Style="{StaticResource PenColorButtonStyle}" Click="OnPresetBlack">
+                    <Ellipse Width="22" Height="22" Fill="#FF000000" Stroke="#55FFFFFF" StrokeThickness="1"/>
+                </Button>
+            </StackPanel>
 
-            <StackPanel Grid.Row="1" Margin="0,12,0,8">
+            <board:HueWheel x:Name="Wheel" Grid.Row="1" Width="240" Height="240" HorizontalAlignment="Center"/>
+
+            <StackPanel Grid.Row="2" Margin="0,12,0,8">
                 <Grid>
                     <TextBlock Text="明度" Foreground="{StaticResource MutedIconBrush}" FontSize="12" VerticalAlignment="Center"/>
                     <TextBlock x:Name="BrightnessText" Text="50%" Foreground="{StaticResource IconBrush}" FontSize="12"
@@ -24,7 +37,7 @@
                 <Slider x:Name="BrightnessSlider" Style="{StaticResource DarkSliderStyle}" Minimum="0" Maximum="100" Value="50"
                         Margin="0,6,0,0" ValueChanged="OnBrightnessChanged"/>
 
-                <Grid Margin="0,12,0,0">
+                <Grid Margin="0,14,0,0">
                     <TextBlock Text="不透明度" Foreground="{StaticResource MutedIconBrush}" FontSize="12" VerticalAlignment="Center"/>
                     <TextBlock x:Name="AlphaText" Text="100%" Foreground="{StaticResource IconBrush}" FontSize="12"
                                HorizontalAlignment="Right" VerticalAlignment="Center"/>
@@ -33,7 +46,7 @@
                         Margin="0,6,0,0" ValueChanged="OnAlphaChanged"/>
             </StackPanel>
 
-            <Button Grid.Row="2" Content="完成" Width="88" Height="34" HorizontalAlignment="Right"
+            <Button Grid.Row="3" Content="完成" Width="88" Height="34" HorizontalAlignment="Right"
                     Foreground="{StaticResource IconBrush}" FontSize="13" Cursor="Hand"
                     Click="OnDoneClick">
                 <Button.Template>

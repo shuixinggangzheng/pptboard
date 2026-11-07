@@ -188,14 +188,14 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Slider">
                     <Grid Background="Transparent" Height="24">
-                        <Border Height="4" Background="#33FFFFFF" CornerRadius="2" VerticalAlignment="Center"/>
+                        <Border Height="4" Background="#66FFFFFF" CornerRadius="2" VerticalAlignment="Center"/>
                         <Track x:Name="PART_Track">
                             <Track.DecreaseRepeatButton>
                                 <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Focusable="False" IsTabStop="False"
                                               Background="Transparent" BorderThickness="0" Opacity="0"/>
                             </Track.DecreaseRepeatButton>
                             <Track.Thumb>
-                                <Thumb Width="14" Height="14" Background="White" BorderBrush="#66000000" BorderThickness="1">
+                                <Thumb Width="16" Height="16" Background="White" BorderBrush="#66000000" BorderThickness="1">
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
                                             <Ellipse Fill="{TemplateBinding Background}" Stroke="{TemplateBinding BorderBrush}" StrokeThickness="1"/>
