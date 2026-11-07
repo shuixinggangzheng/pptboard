@@ -56,7 +56,15 @@ public sealed class SlideshowHost : IDisposable
         Log.Info("host start");
         _dock = new MainDockWindow(_layout);
         Log.Info("dock created");
-        _dock.ColorRequested += (_, _) => OpenColorPanel(_layout.MainDock);
+        _dock.ColorRequested += (_, _) =>
+        {
+            if (_colorPanel?.IsVisible == true)
+            {
+                _colorPanel.Hide();
+                return;
+            }
+            OpenColorPanel(_layout.MainDock);
+        };
         _dock.PreviousRequested += (_, _) => { if (_bridge.CanNavigate) _bridge.Previous(); };
         _dock.NextRequested += (_, _) => { if (_bridge.CanNavigate) _bridge.Next(); };
         _dock.PenRequested += (_, _) => ToggleNativePen();
@@ -183,7 +191,8 @@ public sealed class SlideshowHost : IDisposable
         {
             bool pptEnabled = !_boardOpen;
             _dock.SetNavigable(pptEnabled && _bridge.CanNavigate);
-            _dock.SetPenSupported(pptEnabled && _bridge.NativePenSupported);
+            // 画板打开时“笔”仍可用，但只控制白板画笔，不碰放映指针
+            _dock.SetPenSupported(pptEnabled ? _bridge.NativePenSupported : true);
             _dock.SetEndEnabled(pptEnabled && _bridge.CanNavigate);
         }
 
@@ -298,6 +307,7 @@ public sealed class SlideshowHost : IDisposable
             bool erasing = _ink.Tool == InkTool.Eraser;
             _ink.SetTool(erasing ? InkTool.Pen : InkTool.Eraser);
             _dock?.SetEraserActive(!erasing);
+            _dock?.SetPenActive(erasing);
             Log.Info("dock eraser -> whiteboard " + (erasing ? "pen" : "eraser"));
             return;
         }
@@ -368,6 +378,7 @@ public sealed class SlideshowHost : IDisposable
 
     private void OpenPenMenu()
     {
+        if (_boardOpen) return;
         if (!_bridge.CanNavigate) return;
         if (_penOptions is null)
         {
@@ -428,6 +439,15 @@ public sealed class SlideshowHost : IDisposable
 
     private void ToggleNativePen()
     {
+        if (_boardOpen)
+        {
+            _ink.SetTool(InkTool.Pen);
+            _dock?.SetPenActive(true);
+            _dock?.SetEraserActive(false);
+            Log.Info("dock pen -> whiteboard pen");
+            return;
+        }
+
         if (!_bridge.NativePenSupported) return;
         _nativePenOn = !_nativePenOn;
         _bridge.SetNativePen(_nativePenOn);
@@ -527,6 +547,7 @@ public sealed class SlideshowHost : IDisposable
             {
                 _dock?.SetColor(_ink.Style.Color);
                 _dock?.SetEraserActive(false);
+                if (_boardOpen) _dock?.SetPenActive(true);
                 if (_nativePenOn) _bridge.SetNativePenColor(_ink.Style.Color);
             };
             _penDock.CustomColorRequested += (_, _) =>
@@ -555,9 +576,20 @@ public sealed class SlideshowHost : IDisposable
         _penDock.Show();
         _penDock.RaiseTopmost();
 
+        // 画板打开时先把放映原生笔/橡皮复位，避免两层同时响应
+        if (_nativePenOn || _nativeEraserOn)
+        {
+            _bridge.SetNativePointer(1);
+            _nativePenOn = false;
+            _nativeEraserOn = false;
+        }
+
+        _ink.SetTool(InkTool.Pen);
         _dock.SetBoardActive(true);
+        _dock.SetPenActive(true);
+        _dock.SetEraserActive(false);
         _dock.SetNavigable(false);
-        _dock.SetPenSupported(false);
+        _dock.SetPenSupported(true);
         _dock.SetEndEnabled(false);
         _stack.BringToFront();
         Log.Info($"board opened rect={_layout.Board}");
@@ -589,6 +621,7 @@ public sealed class SlideshowHost : IDisposable
         }
         _dock?.SetBoardActive(false);
         _dock?.SetEraserActive(false);
+        _dock?.SetPenActive(false);
         _dock?.SetNavigable(_bridge.CanNavigate);
         _dock?.SetPenSupported(_bridge.NativePenSupported);
         _dock?.SetEndEnabled(_bridge.CanNavigate);
