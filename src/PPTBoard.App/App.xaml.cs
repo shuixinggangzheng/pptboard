@@ -41,7 +41,7 @@ public partial class App : Application
         Log.Info($"layout screen={layout.ScreenWidth}x{layout.ScreenHeight} debug={Log.DebugShow} dock={layout.MainDock}");
 
         var ink = new InkEngine();
-        var bridge = new NullSlideshowBridge();
+        var bridge = new PPTBoard.Wps.WpsBridge();
         _host = new SlideshowHost(layout, ink, bridge);
 
         var loader = new LoadingWindow(layout);

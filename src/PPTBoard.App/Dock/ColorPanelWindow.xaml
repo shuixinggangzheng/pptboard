@@ -1,0 +1,54 @@
+<host:OverlayWindow x:Class="PPTBoard.App.Dock.ColorPanelWindow"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:host="clr-namespace:PPTBoard.App.Host"
+                    xmlns:board="clr-namespace:PPTBoard.App.Board"
+                    Width="340" Height="420">
+    <Border Background="{StaticResource GlassBrush}" BorderBrush="{StaticResource GlassBorderBrush}"
+            BorderThickness="1" CornerRadius="12">
+        <Grid Margin="20,16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="240"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="40"/>
+            </Grid.RowDefinitions>
+
+            <board:HueWheel x:Name="Wheel" Grid.Row="0" Width="240" Height="240" HorizontalAlignment="Center"/>
+
+            <StackPanel Grid.Row="1" Margin="0,12,0,8">
+                <Grid>
+                    <TextBlock Text="明度" Foreground="{StaticResource MutedIconBrush}" FontSize="12" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="BrightnessText" Text="50%" Foreground="{StaticResource IconBrush}" FontSize="12"
+                               HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                </Grid>
+                <Slider x:Name="BrightnessSlider" Style="{StaticResource DarkSliderStyle}" Minimum="0" Maximum="100" Value="50"
+                        Margin="0,6,0,0" ValueChanged="OnBrightnessChanged"/>
+
+                <Grid Margin="0,12,0,0">
+                    <TextBlock Text="不透明度" Foreground="{StaticResource MutedIconBrush}" FontSize="12" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="AlphaText" Text="100%" Foreground="{StaticResource IconBrush}" FontSize="12"
+                               HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                </Grid>
+                <Slider x:Name="AlphaSlider" Style="{StaticResource DarkSliderStyle}" Minimum="10" Maximum="100" Value="100"
+                        Margin="0,6,0,0" ValueChanged="OnAlphaChanged"/>
+            </StackPanel>
+
+            <Button Grid.Row="2" Content="完成" Width="88" Height="34" HorizontalAlignment="Right"
+                    Foreground="{StaticResource IconBrush}" FontSize="13" Cursor="Hand"
+                    Click="OnDoneClick">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="#332F7CF6" CornerRadius="8" BorderBrush="#55FFFFFF" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#552F7CF6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Grid>
+    </Border>
+</host:OverlayWindow>

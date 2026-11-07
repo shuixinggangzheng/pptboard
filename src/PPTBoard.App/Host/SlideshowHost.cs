@@ -4,6 +4,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using PPTBoard.App.Board;
 using PPTBoard.App.Dock;
+using PPTBoard.Core.Models;
 using PPTBoard.Core.Contracts;
 using PPTBoard.Core.Geometry;
 using PPTBoard.Ink;
@@ -24,8 +25,13 @@ public sealed class SlideshowHost : IDisposable
     private BoardWindow? _board;
     private MarginCatcher? _leftMargin;
     private MarginCatcher? _rightMargin;
+    private PenDockWindow? _penDock;
+    private ColorPanelWindow? _colorPanel;
+    private ClearSliderWindow? _clearSlider;
+    private PageMenuWindow? _pageMenu;
     private DispatcherTimer? _boardAnim;
     private bool _boardOpen;
+    private bool _nativePenOn;
     private int _wpsMissingTicks;
     private bool _disposed;
 
@@ -43,12 +49,12 @@ public sealed class SlideshowHost : IDisposable
         Log.Info("host start");
         _dock = new MainDockWindow(_layout);
         Log.Info("dock created");
-        _dock.ColorRequested += (_, _) => { };
+        _dock.ColorRequested += (_, _) => OpenColorPanel(_layout.MainDock);
         _dock.PreviousRequested += (_, _) => { if (_bridge.CanNavigate) _bridge.Previous(); };
         _dock.NextRequested += (_, _) => { if (_bridge.CanNavigate) _bridge.Next(); };
-        _dock.PenRequested += (_, _) => { };
+        _dock.PenRequested += (_, _) => ToggleNativePen();
         _dock.BoardRequested += (_, _) => ToggleBoard();
-        _dock.EndShowRequested += (_, _) => { if (_bridge.IsAvailable) _bridge.ExitShow(); };
+        _dock.EndShowRequested += (_, _) => { if (_bridge.CanNavigate) _bridge.ExitShow(); };
 
         _dock.SetNavigable(_bridge.CanNavigate);
         _dock.SetPenSupported(_bridge.NativePenSupported);
@@ -56,6 +62,12 @@ public sealed class SlideshowHost : IDisposable
         _dock.SetBoardActive(false);
 
         _stack.Add(_dock);
+
+        _colorPanel = new ColorPanelWindow(_layout);
+        _colorPanel.ColorChanged += OnCustomColorChanged;
+
+        _clearSlider = new ClearSliderWindow(_layout);
+        _clearSlider.Cleared += (_, _) => _ink.ClearCurrentPage();
 
         _showPoll.Tick += (_, _) => PollShow();
         _processPoll.Tick += (_, _) => PollProcess();
@@ -81,7 +93,20 @@ public sealed class SlideshowHost : IDisposable
     private void PollShow()
     {
         if (_disposed) return;
-        bool shouldShow = Log.DebugShow || _bridge.IsShowRunning;
+        bool running = _bridge.IsShowRunning;
+        bool shouldShow = Log.DebugShow || running;
+
+        if (_dock is not null)
+        {
+            _dock.SetNavigable(_bridge.CanNavigate);
+            _dock.SetPenSupported(_bridge.NativePenSupported);
+        }
+
+        if (!running && _nativePenOn)
+        {
+            _nativePenOn = false;
+            _dock?.SetPenActive(false);
+        }
 
         if (shouldShow)
         {
@@ -116,7 +141,7 @@ public sealed class SlideshowHost : IDisposable
 
         Log.Info("ShowDock");
         _dock.Left = _layout.MainDock.X;
-        _dock.Top = Log.DebugShow ? _layout.MainDock.Y - 140 : _layout.MainDock.Y;
+        _dock.Top = _layout.MainDock.Y;
         _dock.Opacity = 1;
         _dock.Show();
         _stack.BringToFront();
@@ -175,6 +200,69 @@ public sealed class SlideshowHost : IDisposable
         else OpenBoard();
     }
 
+    private bool DismissPopupsIfOpen()
+    {
+        if (!IsPopupVisible()) return false;
+        HidePopups();
+        return true;
+    }
+
+    private bool IsPopupVisible() =>
+        (_pageMenu?.IsVisible ?? false) || (_colorPanel?.IsVisible ?? false) || (_clearSlider?.IsVisible ?? false);
+
+    private void HidePopups()
+    {
+        _pageMenu?.Hide();
+        _colorPanel?.Hide();
+        _clearSlider?.Hide();
+    }
+
+    private void TogglePageMenu()
+    {
+        if (_pageMenu is null)
+        {
+            _pageMenu = new PageMenuWindow(_layout, _ink);
+            _stack.Add(_pageMenu);
+        }
+
+        if (_pageMenu.IsVisible)
+        {
+            _pageMenu.Hide();
+            return;
+        }
+
+        _stack.MoveToTop(_pageMenu);
+        _pageMenu.Open();
+        _stack.BringToFront();
+        Log.Info("page menu opened");
+    }
+
+    private void ToggleNativePen()
+    {
+        if (!_bridge.NativePenSupported) return;
+        _nativePenOn = !_nativePenOn;
+        _bridge.SetNativePen(_nativePenOn);
+        if (_nativePenOn) _bridge.SetNativePenColor(_ink.Style.Color);
+        _dock?.SetPenActive(_nativePenOn);
+    }
+
+    private void OpenColorPanel(RectD anchor)
+    {
+        if (_colorPanel is null) return;
+        _stack.MoveToTop(_colorPanel);
+        _colorPanel.Open(_ink.Style.Color, anchor);
+        _stack.BringToFront();
+        Log.Info($"color panel open at {anchor} visible={_colorPanel.IsVisible} left={_colorPanel.Left} top={_colorPanel.Top}");
+    }
+
+    private void OnCustomColorChanged(InkColor color)
+    {
+        _ink.SetStyle(new PenStyle(color, _ink.Style.Width));
+        _penDock?.SelectColor(color);
+        _dock?.SetColor(color);
+        if (_nativePenOn) _bridge.SetNativePenColor(color);
+    }
+
     private void OpenBoard()
     {
         if (_boardOpen || _dock is null) return;
@@ -189,6 +277,7 @@ public sealed class SlideshowHost : IDisposable
             _leftMargin = new MarginCatcher(leftRect);
             _leftMargin.Pressed += (_, _) =>
             {
+                if (DismissPopupsIfOpen()) return;
                 Log.Info("left margin pressed -> close board");
                 CloseBoard(immediate: false);
             };
@@ -197,6 +286,7 @@ public sealed class SlideshowHost : IDisposable
             _rightMargin = new MarginCatcher(rightRect);
             _rightMargin.Pressed += (_, _) =>
             {
+                if (DismissPopupsIfOpen()) return;
                 Log.Info("right margin pressed -> close board");
                 CloseBoard(immediate: false);
             };
@@ -210,7 +300,32 @@ public sealed class SlideshowHost : IDisposable
         {
             _board = new BoardWindow(_layout, _ink);
             _board.CollapseRequested += (_, _) => CloseBoard(immediate: false);
+            _board.ClearRequested += (_, _) =>
+            {
+                _clearSlider?.Open();
+                if (_clearSlider is not null) _stack.MoveToTop(_clearSlider);
+                _stack.BringToFront();
+            };
+            _board.PageMenuRequested += (_, _) => TogglePageMenu();
             _stack.Add(_board);
+        }
+
+        if (_penDock is null)
+        {
+            _penDock = new PenDockWindow(_layout, _ink);
+            _penDock.StyleChanged += (_, _) =>
+            {
+                _dock?.SetColor(_ink.Style.Color);
+                if (_nativePenOn) _bridge.SetNativePenColor(_ink.Style.Color);
+            };
+            _penDock.CustomColorRequested += (_, _) =>
+            {
+                Log.Info("custom color requested");
+                OpenColorPanel(_layout.PenDock);
+            };
+            _stack.Add(_penDock);
+            _stack.Add(_clearSlider!);
+            _stack.Add(_colorPanel!);
         }
 
         _board.BeginAnimation(Window.TopProperty, null);
@@ -221,6 +336,13 @@ public sealed class SlideshowHost : IDisposable
             Log.Info("board slide done");
             _stack.BringToFront();
         });
+
+        _board.IsPopupOpen = () => (_pageMenu?.IsVisible ?? false) || (_colorPanel?.IsVisible ?? false) || (_clearSlider?.IsVisible ?? false);
+        _board.DismissPopups = HidePopups;
+
+        _penDock!.Refresh();
+        _penDock.Show();
+        _penDock.RaiseTopmost();
 
         _dock.SetBoardActive(true);
         _stack.BringToFront();
@@ -246,6 +368,10 @@ public sealed class SlideshowHost : IDisposable
         _boardOpen = false;
         _ink.CancelActivePointers();
         _dock?.SetBoardActive(false);
+        _penDock?.Hide();
+        _clearSlider?.Hide();
+        _colorPanel?.Hide();
+        _pageMenu?.Hide();
 
         if (_board is null) return;
 
@@ -274,6 +400,7 @@ public sealed class SlideshowHost : IDisposable
         _showPoll.Stop();
         _processPoll.Stop();
         _board?.Close();
+        _pageMenu?.Close();
         _leftMargin?.Close();
         _rightMargin?.Close();
         _dock?.Close();

@@ -28,6 +28,10 @@ public partial class BoardWindow : OverlayWindow
     public event EventHandler? ClearRequested;
     public event EventHandler? PageMenuRequested;
 
+    /// <summary>有弹层（页面菜单/颜色面板/清空滑条）打开时，笔迹输入先让位给“关弹层”。</summary>
+    public Func<bool>? IsPopupOpen { get; set; }
+    public Action? DismissPopups { get; set; }
+
     public BoardWindow(LayoutSpec layout, InkEngine engine)
     {
         AllowsTransparency = false;
@@ -68,6 +72,13 @@ public partial class BoardWindow : OverlayWindow
     {
         base.OnMouseLeftButtonDown(e);
         if (e.StylusDevice is not null) return;
+        if (IsPopupOpen?.Invoke() == true)
+        {
+            DismissPopups?.Invoke();
+            e.Handled = true;
+            return;
+        }
+
         var p = e.GetPosition(this);
         if (p.Y >= DrawingHeight) return;
         _mouseDown = true;
@@ -114,6 +125,13 @@ public partial class BoardWindow : OverlayWindow
 
         if (msg == WM_POINTERDOWN)
         {
+            if (IsPopupOpen?.Invoke() == true)
+            {
+                DismissPopups?.Invoke();
+                handled = true;
+                return IntPtr.Zero;
+            }
+
             if (y >= DrawingHeight) return IntPtr.Zero;
             _engine.PointerDown(pointerId, x, y);
             handled = true;

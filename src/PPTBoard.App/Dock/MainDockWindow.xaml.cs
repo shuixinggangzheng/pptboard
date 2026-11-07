@@ -40,6 +40,13 @@ public partial class MainDockWindow : OverlayWindow
         PenButton.IsEnabled = supported;
     }
 
+    public void SetPenActive(bool active)
+    {
+        PenButton.Background = active
+            ? new SolidColorBrush(Color.FromArgb(0x33, 0x2F, 0x7C, 0xF6))
+            : Brushes.Transparent;
+    }
+
     public void SetBoardActive(bool active)
     {
         BoardButton.Background = active

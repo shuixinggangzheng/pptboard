@@ -37,11 +37,17 @@ public sealed class InkDocument
         return _current;
     }
 
-    public bool DeleteCurrentPage()
+    public bool DeleteCurrentPage() => DeletePage(_current);
+
+    public bool DeletePage(int index)
     {
         if (_pages.Count <= 1) return false;
-        _pages.RemoveAt(_current);
+        if (index < 0 || index >= _pages.Count) return false;
+
+        _pages.RemoveAt(index);
         if (_current >= _pages.Count) _current = _pages.Count - 1;
+        if (_current > index) _current--;
+        if (_current < 0) _current = 0;
         Reindex();
         PagesChanged?.Invoke();
         CurrentPageChanged?.Invoke();

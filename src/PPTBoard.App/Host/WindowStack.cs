@@ -13,6 +13,11 @@ public sealed class WindowStack
         if (!_windows.Contains(window)) _windows.Add(window);
     }
 
+    public void MoveToTop(OverlayWindow window)
+    {
+        if (_windows.Remove(window)) _windows.Add(window);
+    }
+
     public void AddFirst(OverlayWindow window)
     {
         _windows.Remove(window);
@@ -27,11 +32,11 @@ public sealed class WindowStack
             .Where(w => w.IsVisible && w.Handle != IntPtr.Zero)
             .ToList();
 
-        // 列表顺序是“底 → 顶”。SetWindowPos(a, b) 把 a 放到 b 的后面，
-        // 所以对相邻两张调用一次，就能把整条链按顺序排好，最后再把顶窗抬到 TOPMOST。
+        // 列表顺序是“底 → 顶”。实测 SetWindowPos(a, b) 会把 a 放到 b 上面，
+        // 所以让 i+1 抬到 i 之上，整条链就按列表顺序排好。
         for (int i = 0; i < visible.Count - 1; i++)
         {
-            NativeMethods.SetWindowPos(visible[i].Handle, visible[i + 1].Handle, 0, 0, 0, 0,
+            NativeMethods.SetWindowPos(visible[i + 1].Handle, visible[i].Handle, 0, 0, 0, 0,
                 NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE);
         }
 

@@ -1,0 +1,67 @@
+<host:OverlayWindow x:Class="PPTBoard.App.Board.PenDockWindow"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:host="clr-namespace:PPTBoard.App.Host"
+                    Width="666" Height="56">
+    <Border Background="{StaticResource GlassBrush}" BorderBrush="{StaticResource GlassBorderBrush}"
+            BorderThickness="1" CornerRadius="10">
+        <Grid Margin="16,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="333"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="Preset0" Style="{StaticResource PenColorButtonStyle}" Click="OnPresetClick" Tag="0">
+                    <Ellipse Width="24" Height="24" Fill="#FF000000" Stroke="#55FFFFFF" StrokeThickness="1"/>
+                </Button>
+                <Button x:Name="Preset1" Style="{StaticResource PenColorButtonStyle}" Margin="8,0,0,0" Click="OnPresetClick" Tag="1">
+                    <Ellipse Width="24" Height="24" Fill="#FFFFFFFF" Stroke="#55000000" StrokeThickness="1"/>
+                </Button>
+                <Button x:Name="Preset2" Style="{StaticResource PenColorButtonStyle}" Margin="8,0,0,0" Click="OnPresetClick" Tag="2">
+                    <Ellipse Width="24" Height="24" Fill="#FFE53935" Stroke="#55FFFFFF" StrokeThickness="1"/>
+                </Button>
+                <Button x:Name="Preset3" Style="{StaticResource PenColorButtonStyle}" Margin="8,0,0,0" Click="OnPresetClick" Tag="3">
+                    <Ellipse Width="24" Height="24" Fill="#FF1E88E5" Stroke="#55FFFFFF" StrokeThickness="1"/>
+                </Button>
+                <Button x:Name="Preset4" Style="{StaticResource PenColorButtonStyle}" Margin="8,0,0,0" Click="OnPresetClick" Tag="4">
+                    <Ellipse Width="24" Height="24" Fill="#FFFDD835" Stroke="#55FFFFFF" StrokeThickness="1"/>
+                </Button>
+                <Button x:Name="CustomButton" Style="{StaticResource PenColorButtonStyle}" Margin="8,0,0,0" Click="OnCustomClick" ToolTip="自定义颜色">
+                    <Ellipse Width="24" Height="24" Stroke="#55FFFFFF" StrokeThickness="1">
+                        <Ellipse.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#FFE53935" Offset="0"/>
+                                <GradientStop Color="#FFFDD835" Offset="0.25"/>
+                                <GradientStop Color="#FF43A047" Offset="0.5"/>
+                                <GradientStop Color="#FF1E88E5" Offset="0.75"/>
+                                <GradientStop Color="#FF8E24AA" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+                </Button>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button x:Name="Width0" Style="{StaticResource PenWidthButtonStyle}" Click="OnWidthPresetClick" Tag="3">
+                    <Ellipse Width="4" Height="4" Fill="{StaticResource IconBrush}"/>
+                </Button>
+                <Button x:Name="Width1" Style="{StaticResource PenWidthButtonStyle}" Margin="4,0,0,0" Click="OnWidthPresetClick" Tag="6">
+                    <Ellipse Width="8" Height="8" Fill="{StaticResource IconBrush}"/>
+                </Button>
+                <Button x:Name="Width2" Style="{StaticResource PenWidthButtonStyle}" Margin="4,0,0,0" Click="OnWidthPresetClick" Tag="10">
+                    <Ellipse Width="12" Height="12" Fill="{StaticResource IconBrush}"/>
+                </Button>
+                <Button x:Name="Width3" Style="{StaticResource PenWidthButtonStyle}" Margin="4,0,0,0" Click="OnWidthPresetClick" Tag="16">
+                    <Ellipse Width="16" Height="16" Fill="{StaticResource IconBrush}"/>
+                </Button>
+                <Button x:Name="Width4" Style="{StaticResource PenWidthButtonStyle}" Margin="4,0,0,0" Click="OnWidthPresetClick" Tag="24">
+                    <Ellipse Width="20" Height="20" Fill="{StaticResource IconBrush}"/>
+                </Button>
+                <Slider x:Name="WidthSlider" Style="{StaticResource DarkSliderStyle}" Width="100" Margin="10,0,0,0"
+                        Minimum="1" Maximum="32" SmallChange="1" LargeChange="2" Value="6"
+                        VerticalAlignment="Center" ValueChanged="OnWidthSliderChanged"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</host:OverlayWindow>
