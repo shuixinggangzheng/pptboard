@@ -31,7 +31,19 @@ WPS 演示 / Microsoft PowerPoint 的放映浮层：底部半透明 dock + 可�
 
 ## 安装
 
-解压 zip，双击 install.bat。卸载：uninstall.bat。
+推荐用 setup 安装包：
+
+    PPTBoard-0.1.0-setup.exe
+
+双击后按向导安装到 `%LOCALAPPDATA%\PPTBoard`（无需管理员），会自动写开机自启并启动监听器；卸载在“设置 → 应用 → PPTBoard”。
+
+也可以解压 zip 后运行 install.bat（绿色方式）。
+
+## 构建 setup
+
+    makensis installer/setup.nsi
+
+需要 NSIS 3.x；输出 artifacts/PPTBoard-0.1.0-setup.exe。
 
 ## 不打扰桌面的验证
 
