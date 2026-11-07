@@ -16,10 +16,10 @@ public class LayoutMetricsTests
         Assert.Equal(new RectD(128, 928, 1664, 56), l.GrayBar);
         Assert.Equal(new RectD(1681, 928, 111, 56), l.PageBox);
         Assert.Equal(new RectD(627, 984, 666, 56), l.PenDock);
-        Assert.Equal(new RectD(816, 1040, 288, 40), l.MainDock);
+        Assert.Equal(new RectD(794, 1040, 332, 40), l.MainDock);
         Assert.Equal(new RectD(1600, 0, 320, 1080), l.PageMenu);
         Assert.Equal(new RectD(760, 872, 400, 44), l.ClearSlider);
-        Assert.Equal(new RectD(680, 608, 340, 420), l.ColorPanel);
+        Assert.Equal(new RectD(658, 608, 340, 420), l.ColorPanel);
         Assert.Equal(new RectD(1816, 976, 72, 72), l.LoadingDisc);
         Assert.Equal(new RectD(128, 0, 1664, 928), l.DrawingArea);
     }

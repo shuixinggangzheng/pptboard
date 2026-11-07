@@ -13,19 +13,13 @@
 
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                 <Button x:Name="Preset0" Style="{StaticResource PenColorButtonStyle}" Click="OnPresetClick" Tag="0">
-                    <Ellipse Width="24" Height="24" Fill="#FF000000" Stroke="#55FFFFFF" StrokeThickness="1"/>
-                </Button>
-                <Button x:Name="Preset1" Style="{StaticResource PenColorButtonStyle}" Margin="8,0,0,0" Click="OnPresetClick" Tag="1">
-                    <Ellipse Width="24" Height="24" Fill="#FFFFFFFF" Stroke="#55000000" StrokeThickness="1"/>
-                </Button>
-                <Button x:Name="Preset2" Style="{StaticResource PenColorButtonStyle}" Margin="8,0,0,0" Click="OnPresetClick" Tag="2">
                     <Ellipse Width="24" Height="24" Fill="#FFE53935" Stroke="#55FFFFFF" StrokeThickness="1"/>
                 </Button>
-                <Button x:Name="Preset3" Style="{StaticResource PenColorButtonStyle}" Margin="8,0,0,0" Click="OnPresetClick" Tag="3">
+                <Button x:Name="Preset1" Style="{StaticResource PenColorButtonStyle}" Margin="8,0,0,0" Click="OnPresetClick" Tag="1">
                     <Ellipse Width="24" Height="24" Fill="#FF1E88E5" Stroke="#55FFFFFF" StrokeThickness="1"/>
                 </Button>
-                <Button x:Name="Preset4" Style="{StaticResource PenColorButtonStyle}" Margin="8,0,0,0" Click="OnPresetClick" Tag="4">
-                    <Ellipse Width="24" Height="24" Fill="#FFFDD835" Stroke="#55FFFFFF" StrokeThickness="1"/>
+                <Button x:Name="Preset2" Style="{StaticResource PenColorButtonStyle}" Margin="8,0,0,0" Click="OnPresetClick" Tag="2">
+                    <Ellipse Width="24" Height="24" Fill="#FF000000" Stroke="#55FFFFFF" StrokeThickness="1"/>
                 </Button>
                 <Button x:Name="CustomButton" Style="{StaticResource PenColorButtonStyle}" Margin="8,0,0,0" Click="OnCustomClick" ToolTip="自定义颜色">
                     <Ellipse Width="24" Height="24" Stroke="#55FFFFFF" StrokeThickness="1">

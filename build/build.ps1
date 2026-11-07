@@ -27,8 +27,12 @@ $src = Join-Path $root 'src\watcher'
 $cmd = 'call "' + $vcvars + '" >nul && cl /nologo /O2 /MT /W4 /DUNICODE /D_UNICODE /SUBSYSTEM:WINDOWS ' +
     '/Fo"' + $watcherOut + '\\" /Fe"' + $watcherOut + '\PPTBoardWatcher.exe" ' +
     '"' + $src + '\main.c" "' + $src + '\process.c" "' + $src + '\log.c" user32.lib advapi32.lib /link /SUBSYSTEM:WINDOWS'
-cmd /c $cmd
-if ($LASTEXITCODE -ne 0) { throw "watcher build failed with exit $LASTEXITCODE" }
+$previousErrorAction = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+cmd /c $cmd 2>&1 | ForEach-Object { Write-Host $_ }
+$watcherExit = $LASTEXITCODE
+$ErrorActionPreference = $previousErrorAction
+if ($watcherExit -ne 0) { throw "watcher build failed with exit $watcherExit" }
 
 Write-Host "== publish app (self-contained win-x64) =="
 $appProject = Join-Path $root 'src\PPTBoard.App\PPTBoard.App.csproj'

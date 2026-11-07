@@ -64,6 +64,13 @@
 - F:\PPTBoard 已暂存：source/ + dist/PPTBoard-0.1.0-win-x64.zip + STATUS/SPEC/README
 - 验收完成后更新最终版本号与发布包
 
+## 用户反馈修复（2026-11-07）
+
+1. 结束放映后再次放映 dock 不出现 → ShowDock 时清除残留的 Opacity 动画再淡入；隐藏完成后显式清零。离屏桌面验证：隐藏→再次显示后 visible=True、opacity=1。
+2. 主 dock 没有橡皮 → 新增橡皮按钮，dock 288→332；点橡皮打开画板并进入擦除态，再点回画笔；选颜色/粗细自动回画笔。
+3. 颜色面板点框外不能关闭 → 新增全屏 PopoverCatcher，点面板外任意位置关闭；Win32 z-order 验证 hitPanel=面板、hitOutside=catcher。
+4. 预设颜色改为红/蓝/黑三个。
+
 ## 待办
 
 - 真实桌面/一体机端到端验收（放映、触控、焦点、退出、置顶）

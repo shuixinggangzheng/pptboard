@@ -44,7 +44,7 @@ internal static class Program
             return;
         }
 
-        RenderContent(new MainDockWindow(layout), 288, 40, Path.Combine(outDir, "dock.png"));
+        RenderContent(new MainDockWindow(layout), 332, 40, Path.Combine(outDir, "dock.png"));
         RenderContent(new PenDockWindow(layout, engine), 666, 56, Path.Combine(outDir, "pen-dock.png"));
         RenderContent(new BoardWindow(layout, engine), 1664, 984, Path.Combine(outDir, "board.png"));
         RenderContent(new ColorPanelWindow(layout), 340, 420, Path.Combine(outDir, "color-panel.png"));
@@ -86,13 +86,14 @@ internal static class Program
 
         var engine = new InkEngine();
         var dock = new MainDockWindow(layout);
-        bool board = false, prev = false, next = false, pen = false, color = false, end = false;
+        bool board = false, prev = false, next = false, pen = false, color = false, end = false, eraser = false;
         dock.BoardRequested += (_, _) => board = true;
         dock.PreviousRequested += (_, _) => prev = true;
         dock.NextRequested += (_, _) => next = true;
         dock.PenRequested += (_, _) => pen = true;
         dock.ColorRequested += (_, _) => color = true;
         dock.EndShowRequested += (_, _) => end = true;
+        dock.EraserRequested += (_, _) => eraser = true;
 
 
         Click(dock, "BoardButton");
@@ -101,15 +102,17 @@ internal static class Program
         Click(dock, "PenButton");
         Click(dock, "ColorButton");
         Click(dock, "EndButton");
+        Click(dock, "EraserButton");
         Check("dock board event", board);
         Check("dock prev event", prev);
         Check("dock next event", next);
         Check("dock pen event", pen);
         Check("dock color event", color);
         Check("dock end event", end);
+        Check("dock eraser event", eraser);
 
         var penDock = new PenDockWindow(layout, engine);
-        Click(penDock, "Preset2");
+        Click(penDock, "Preset0");
         Check("pen preset red", engine.Style.Color == InkColor.Red);
         Click(penDock, "Width3");
         Check("pen width 16", Math.Abs(engine.Style.Width - 16) < 0.01);

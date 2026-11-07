@@ -9,7 +9,7 @@ public readonly record struct InkColor(byte A, byte R, byte G, byte B)
     public static readonly InkColor Blue = new(255, 30, 136, 229);
     public static readonly InkColor Yellow = new(255, 253, 216, 53);
 
-    public static readonly InkColor[] Presets = [Black, White, Red, Blue, Yellow];
+    public static readonly InkColor[] Presets = [Red, Blue, Black];
 
     public uint ToArgb() => ((uint)A << 24) | ((uint)R << 16) | ((uint)G << 8) | B;
 

@@ -30,6 +30,7 @@ public sealed class SlideshowHost : IDisposable
     private ClearSliderWindow? _clearSlider;
     private PageMenuWindow? _pageMenu;
     private PenOptionsWindow? _penOptions;
+    private PopoverCatcher? _popoverCatcher;
     private DispatcherTimer? _boardAnim;
     private bool _boardOpen;
     private bool _nativePenOn;
@@ -60,6 +61,7 @@ public sealed class SlideshowHost : IDisposable
         _dock.PenRequested += (_, _) => ToggleNativePen();
         _dock.PenMenuRequested += (_, _) => OpenPenMenu();
         _dock.BoardRequested += (_, _) => ToggleBoard();
+        _dock.EraserRequested += (_, _) => ToggleEraser();
         _dock.EndShowRequested += (_, _) => { if (_bridge.CanNavigate) _bridge.ExitShow(); };
 
         _dock.SetNavigable(_bridge.CanNavigate);
@@ -71,6 +73,14 @@ public sealed class SlideshowHost : IDisposable
 
         _colorPanel = new ColorPanelWindow(_layout);
         _colorPanel.ColorChanged += OnCustomColorChanged;
+        _colorPanel.IsVisibleChanged += (_, _) =>
+        {
+            if (!_colorPanel.IsVisible)
+            {
+                _popoverCatcher?.Hide();
+                Log.Info("color panel hidden");
+            }
+        };
 
         _clearSlider = new ClearSliderWindow(_layout);
         _clearSlider.Cleared += (_, _) => _ink.ClearCurrentPage();
@@ -91,6 +101,41 @@ public sealed class SlideshowHost : IDisposable
         {
             Log.Info("debug open board");
             OpenBoard();
+        }
+
+        if (Environment.GetEnvironmentVariable("PPTBOARD_DEBUG_COLOR") == "1")
+        {
+            Log.Info("debug open color panel");
+            OpenColorPanel(_layout.MainDock);
+            LogColorZOrder();
+        }
+
+        if (Environment.GetEnvironmentVariable("PPTBOARD_DEBUG_TOGGLE") == "1")
+        {
+            var hide = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            hide.Tick += (_, _) =>
+            {
+                hide.Stop();
+                Log.Info("debug hide dock");
+                HideDock();
+            };
+            hide.Start();
+
+            var show = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
+            show.Tick += (_, _) =>
+            {
+                show.Stop();
+                Log.Info("debug show dock again");
+                ShowDock();
+                var probe = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+                probe.Tick += (_, _) =>
+                {
+                    probe.Stop();
+                    Log.Info($"debug dock re-shown visible={_dock?.IsVisible} opacity={_dock?.Opacity}");
+                };
+                probe.Start();
+            };
+            show.Start();
         }
 
         Log.Info("host start done");
@@ -181,10 +226,12 @@ public sealed class SlideshowHost : IDisposable
         if (_dock is null || _dock.IsVisible) return;
 
         Log.Info("ShowDock");
+        _dock.BeginAnimation(Window.OpacityProperty, null);
         _dock.Left = _layout.MainDock.X;
         _dock.Top = _layout.MainDock.Y;
-        _dock.Opacity = 1;
+        _dock.Opacity = 0;
         _dock.Show();
+        _dock.BeginAnimation(Window.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)));
         _stack.BringToFront();
 
         var hwnd = new System.Windows.Interop.WindowInteropHelper(_dock).Handle;
@@ -207,7 +254,12 @@ public sealed class SlideshowHost : IDisposable
         if (_dock is null || !_dock.IsVisible) return;
         Log.Info("HideDock");
         var animation = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(140));
-        animation.Completed += (_, _) => _dock.Hide();
+        animation.Completed += (_, _) =>
+        {
+            _dock.Hide();
+            _dock.BeginAnimation(Window.OpacityProperty, null);
+            _dock.Opacity = 0;
+        };
         _dock.BeginAnimation(Window.OpacityProperty, animation);
     }
 
@@ -233,6 +285,21 @@ public sealed class SlideshowHost : IDisposable
             }
         };
         timer.Start();
+    }
+
+    private void ToggleEraser()
+    {
+        if (_ink.Tool == InkTool.Eraser)
+        {
+            _ink.SetTool(InkTool.Pen);
+            _dock?.SetEraserActive(false);
+            return;
+        }
+
+        if (!_boardOpen) OpenBoard();
+        _ink.SetTool(InkTool.Eraser);
+        _dock?.SetEraserActive(true);
+        Log.Info("dock eraser -> eraser tool");
     }
 
     private void ToggleBoard()
@@ -298,6 +365,21 @@ public sealed class SlideshowHost : IDisposable
         _stack.BringToFront();
     }
 
+    private void LogColorZOrder()
+    {
+        if (_colorPanel is null || _popoverCatcher is null) return;
+        var panelHwnd = new System.Windows.Interop.WindowInteropHelper(_colorPanel).Handle;
+        var catcherHwnd = new System.Windows.Interop.WindowInteropHelper(_popoverCatcher).Handle;
+        Interop.NativeMethods.GetWindowRect(panelHwnd, out var pr);
+        var inside = Interop.NativeMethods.WindowFromPoint(new Interop.NativeMethods.POINT
+        {
+            X = pr.Left + (pr.Right - pr.Left) / 2,
+            Y = pr.Top + (pr.Bottom - pr.Top) / 2
+        });
+        var outside = Interop.NativeMethods.WindowFromPoint(new Interop.NativeMethods.POINT { X = 40, Y = 40 });
+        Log.Info($"color z: panel={panelHwnd} catcher={catcherHwnd} hitPanel={inside} hitOutside={outside}");
+    }
+
     private void ApplyPenOption(string option)
     {
         switch (option)
@@ -336,10 +418,26 @@ public sealed class SlideshowHost : IDisposable
     private void OpenColorPanel(RectD anchor)
     {
         if (_colorPanel is null) return;
+
+        if (_popoverCatcher is null)
+        {
+            _popoverCatcher = new PopoverCatcher(_layout);
+            _popoverCatcher.Pressed += (_, _) =>
+            {
+                Log.Info("popover catcher pressed -> close color panel");
+                _colorPanel.Hide();
+            };
+            _stack.Add(_popoverCatcher);
+        }
+
+        _popoverCatcher.Show();
+        _stack.Add(_colorPanel);
+        _stack.MoveToTop(_popoverCatcher);
         _stack.MoveToTop(_colorPanel);
         _colorPanel.Open(_ink.Style.Color, anchor);
-        _stack.BringToFront();
         Log.Info($"color panel open at {anchor} visible={_colorPanel.IsVisible} left={_colorPanel.Left} top={_colorPanel.Top}");
+        _stack.BringToFront();
+        LogColorZOrder();
     }
 
     private void OnCustomColorChanged(InkColor color)
@@ -403,6 +501,7 @@ public sealed class SlideshowHost : IDisposable
             _penDock.StyleChanged += (_, _) =>
             {
                 _dock?.SetColor(_ink.Style.Color);
+                _dock?.SetEraserActive(false);
                 if (_nativePenOn) _bridge.SetNativePenColor(_ink.Style.Color);
             };
             _penDock.CustomColorRequested += (_, _) =>
@@ -457,7 +556,9 @@ public sealed class SlideshowHost : IDisposable
         if (!_boardOpen) return;
         _boardOpen = false;
         _ink.CancelActivePointers();
+        _ink.SetTool(InkTool.Pen);
         _dock?.SetBoardActive(false);
+        _dock?.SetEraserActive(false);
         _dock?.SetNavigable(_bridge.CanNavigate);
         _dock?.SetPenSupported(_bridge.NativePenSupported);
         _dock?.SetEndEnabled(_bridge.CanNavigate);
@@ -496,6 +597,7 @@ public sealed class SlideshowHost : IDisposable
         _board?.Close();
         _pageMenu?.Close();
         _penOptions?.Close();
+        _popoverCatcher?.Close();
         _leftMargin?.Close();
         _rightMargin?.Close();
         _dock?.Close();

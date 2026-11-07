@@ -20,7 +20,7 @@ public sealed record LayoutSpec(
     public const double PenDockHeight = 56;
     public const double GrayBarHeight = 56;
     public const double PageMenuWidth = 320;
-    public const double MainDockWidth = 288;
+    public const double MainDockWidth = 332;
     public const double LoadingDiscSize = 72;
     public const double ScreenEdgeGap = 32;
 

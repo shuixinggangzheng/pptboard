@@ -16,6 +16,7 @@ public partial class MainDockWindow : OverlayWindow
     public event EventHandler? NextRequested;
     public event EventHandler? PenRequested;
     public event EventHandler? BoardRequested;
+    public event EventHandler? EraserRequested;
     public event EventHandler? EndShowRequested;
     public event EventHandler? PenMenuRequested;
 
@@ -65,6 +66,13 @@ public partial class MainDockWindow : OverlayWindow
         EndButton.IsEnabled = enabled;
     }
 
+    public void SetEraserActive(bool active)
+    {
+        EraserButton.Background = active
+            ? new SolidColorBrush(Color.FromArgb(0x33, 0x2F, 0x7C, 0xF6))
+            : Brushes.Transparent;
+    }
+
     public void SetPenActive(bool active)
     {
         PenButton.Background = active
@@ -92,6 +100,8 @@ public partial class MainDockWindow : OverlayWindow
         }
         PenRequested?.Invoke(this, EventArgs.Empty);
     }
+    private void OnEraserClick(object sender, RoutedEventArgs e) => EraserRequested?.Invoke(this, EventArgs.Empty);
+
     private void OnBoardClick(object sender, RoutedEventArgs e)
     {
         Log.Info("dock board clicked");

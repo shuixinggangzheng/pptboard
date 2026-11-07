@@ -44,6 +44,7 @@ public partial class PenDockWindow : OverlayWindow
         if (sender is not Button button || button.Tag is not string tag) return;
         int index = int.Parse(tag);
         var color = InkColor.Presets[index];
+        _engine.SetTool(InkTool.Pen);
         _engine.SetStyle(new PenStyle(color, _engine.Style.Width));
         SelectColor(color);
         StyleChanged?.Invoke(this, EventArgs.Empty);
@@ -52,7 +53,7 @@ public partial class PenDockWindow : OverlayWindow
     private void OnCustomClick(object sender, RoutedEventArgs e)
     {
         Log.Info("pen dock custom click");
-        foreach (var button in new[] { Preset0, Preset1, Preset2, Preset3, Preset4 })
+        foreach (var button in new[] { Preset0, Preset1, Preset2 })
             SetRing(button, false);
         SetRing(CustomButton, true);
         _selectedColorButton = CustomButton;
@@ -82,6 +83,7 @@ public partial class PenDockWindow : OverlayWindow
 
     private void ApplyWidth(double width)
     {
+        _engine.SetTool(InkTool.Pen);
         _engine.SetStyle(new PenStyle(_engine.Style.Color, width));
         UpdateWidthSelection(width);
         StyleChanged?.Invoke(this, EventArgs.Empty);
@@ -89,7 +91,7 @@ public partial class PenDockWindow : OverlayWindow
 
     public void SelectColor(InkColor color)
     {
-        var buttons = new[] { Preset0, Preset1, Preset2, Preset3, Preset4 };
+        var buttons = new[] { Preset0, Preset1, Preset2 };
         Button? match = null;
         for (int i = 0; i < InkColor.Presets.Length; i++)
         {
