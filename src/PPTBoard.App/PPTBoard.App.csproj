@@ -12,6 +12,7 @@
     <AssemblyName>PPTBoard</AssemblyName>
     <RootNamespace>PPTBoard.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
     <Version>0.1.0</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
