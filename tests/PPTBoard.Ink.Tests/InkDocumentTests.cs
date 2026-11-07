@@ -49,6 +49,19 @@ public class InkDocumentTests
     }
 
     [Fact]
+    public void ResetAll_LeavesOneEmptyPage()
+    {
+        var doc = new InkDocument();
+        doc.AddPageAfterCurrent();
+        doc.AddPageAfterCurrent();
+        doc.ResetAll();
+
+        Assert.Equal(1, doc.PageCount);
+        Assert.Equal(0, doc.CurrentIndex);
+        Assert.True(doc.Current.IsEmpty);
+    }
+
+    [Fact]
     public void GoTo_ClampsToValidRange()
     {
         var doc = new InkDocument();

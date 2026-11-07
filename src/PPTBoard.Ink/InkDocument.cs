@@ -55,6 +55,17 @@ public sealed class InkDocument
         return true;
     }
 
+    /// <summary>清空所有页，只留一张空白页（退出放映时调用）。</summary>
+    public void ResetAll()
+    {
+        _pages.Clear();
+        _pages.Add(new InkPage { Index = 0 });
+        _current = 0;
+        PagesChanged?.Invoke();
+        CurrentPageChanged?.Invoke();
+        ContentChanged?.Invoke();
+    }
+
     public bool GoTo(int index)
     {
         if (index < 0 || index >= _pages.Count) return false;

@@ -39,6 +39,7 @@ public sealed class SlideshowHost : IDisposable
     private string? _lastBridgeError;
     private string? _lastBridgeDiagnostics;
     private bool _windowFallbackLogged;
+    private bool _wasShowRunning;
     private int _wpsMissingTicks;
     private bool _disposed;
 
@@ -56,15 +57,7 @@ public sealed class SlideshowHost : IDisposable
         Log.Info("host start");
         _dock = new MainDockWindow(_layout);
         Log.Info("dock created");
-        _dock.ColorRequested += (_, _) =>
-        {
-            if (_colorPanel?.IsVisible == true)
-            {
-                _colorPanel.Hide();
-                return;
-            }
-            OpenColorPanel(_layout.MainDock);
-        };
+        _dock.ColorRequested += (_, _) => ToggleColorPanel();
         _dock.PreviousRequested += (_, _) => { if (_bridge.CanNavigate) _bridge.Previous(); };
         _dock.NextRequested += (_, _) => { if (_bridge.CanNavigate) _bridge.Next(); };
         _dock.PenRequested += (_, _) => ToggleNativePen();
@@ -117,6 +110,16 @@ public sealed class SlideshowHost : IDisposable
             Log.Info("debug open color panel");
             OpenColorPanel(_layout.MainDock);
             LogColorZOrder();
+
+            var toggle = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            toggle.Tick += (_, _) =>
+            {
+                toggle.Stop();
+                Log.Info("debug toggle color panel");
+                ToggleColorPanel();
+                Log.Info($"debug color panel visible={_colorPanel?.IsVisible}");
+            };
+            toggle.Start();
         }
 
         if (Environment.GetEnvironmentVariable("PPTBOARD_DEBUG_TOGGLE") == "1")
@@ -184,6 +187,14 @@ public sealed class SlideshowHost : IDisposable
                 Log.Info("bridge diag: " + wpsBridge.Diagnostics);
             }
         }
+
+        if (!running && _wasShowRunning)
+        {
+            CloseBoard(immediate: true);
+            _ink.Document.ResetAll();
+            Log.Info("show ended, whiteboard cleared");
+        }
+        _wasShowRunning = running;
 
         bool shouldShow = Log.DebugShow || running;
 
@@ -408,7 +419,18 @@ public sealed class SlideshowHost : IDisposable
             Y = pr.Top + (pr.Bottom - pr.Top) / 2
         });
         var outside = Interop.NativeMethods.WindowFromPoint(new Interop.NativeMethods.POINT { X = 40, Y = 40 });
-        Log.Info($"color z: panel={panelHwnd} catcher={catcherHwnd} hitPanel={inside} hitOutside={outside}");
+        IntPtr hitDock = IntPtr.Zero;
+        if (_dock is not null)
+        {
+            var dockHwnd = new System.Windows.Interop.WindowInteropHelper(_dock).Handle;
+            Interop.NativeMethods.GetWindowRect(dockHwnd, out var dr);
+            hitDock = Interop.NativeMethods.WindowFromPoint(new Interop.NativeMethods.POINT
+            {
+                X = dr.Left + (dr.Right - dr.Left) / 2,
+                Y = dr.Top + (dr.Bottom - dr.Top) / 2
+            });
+        }
+        Log.Info($"color z: panel={panelHwnd} catcher={catcherHwnd} hitPanel={inside} hitOutside={outside} hitDock={hitDock}");
     }
 
     private void ApplyPenOption(string option)
@@ -460,6 +482,17 @@ public sealed class SlideshowHost : IDisposable
         _dock?.SetPenActive(_nativePenOn);
     }
 
+    private void ToggleColorPanel()
+    {
+        if (_colorPanel?.IsVisible == true)
+        {
+            _colorPanel.Hide();
+            Log.Info("color dot toggled -> hide panel");
+            return;
+        }
+        OpenColorPanel(_layout.MainDock);
+    }
+
     private void OpenColorPanel(RectD anchor)
     {
         if (_colorPanel is null) return;
@@ -479,6 +512,10 @@ public sealed class SlideshowHost : IDisposable
         _stack.Add(_colorPanel);
         _stack.MoveToTop(_popoverCatcher);
         _stack.MoveToTop(_colorPanel);
+        if (_dock is not null)
+        {
+            _popoverCatcher.ExcludeWindow(new System.Windows.Interop.WindowInteropHelper(_dock).Handle);
+        }
         _colorPanel.Open(_ink.Style.Color, anchor);
         Log.Info($"color panel open at {anchor} visible={_colorPanel.IsVisible} left={_colorPanel.Left} top={_colorPanel.Top}");
         _stack.BringToFront();
