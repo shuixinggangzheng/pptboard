@@ -18,5 +18,6 @@ public sealed class NullSlideshowBridge : ISlideshowBridge
     public void GoTo(int position) { }
     public void ExitShow() { }
     public void SetNativePen(bool enabled) { }
+    public void SetNativePointer(int pointerType) { }
     public void SetNativePenColor(InkColor color) { }
 }

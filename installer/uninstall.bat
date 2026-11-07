@@ -10,4 +10,4 @@ reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v PPTBoardWatch
 if exist "%DST%" rmdir /s /q "%DST%"
 
 echo Done.
-pause
+if not defined PPTBOARD_SILENT pause

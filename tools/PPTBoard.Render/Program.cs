@@ -36,6 +36,14 @@ internal static class Program
         var layout = LayoutSpec.Compute(1920, 1080);
         var engine = BuildInk();
 
+        if (args.Length > 0 && args[0] == "--selftest")
+        {
+            int failures = RunSelfTest(layout);
+            app.Shutdown();
+            Environment.ExitCode = failures == 0 ? 0 : 1;
+            return;
+        }
+
         RenderContent(new MainDockWindow(layout), 288, 40, Path.Combine(outDir, "dock.png"));
         RenderContent(new PenDockWindow(layout, engine), 666, 56, Path.Combine(outDir, "pen-dock.png"));
         RenderContent(new BoardWindow(layout, engine), 1664, 984, Path.Combine(outDir, "board.png"));
@@ -57,6 +65,74 @@ internal static class Program
 
         Console.WriteLine("rendered to " + Path.GetFullPath(outDir));
         app.Shutdown();
+    }
+
+    private static int RunSelfTest(LayoutSpec layout)
+    {
+        int failures = 0;
+        void Check(string name, bool ok)
+        {
+            Console.WriteLine((ok ? "PASS " : "FAIL ") + name);
+            if (!ok) failures++;
+        }
+
+        void Click(Window window, string name)
+        {
+            if (window.FindName(name) is System.Windows.Controls.Button button)
+                button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            else
+                Check("find " + name, false);
+        }
+
+        var engine = new InkEngine();
+        var dock = new MainDockWindow(layout);
+        bool board = false, prev = false, next = false, pen = false, color = false, end = false;
+        dock.BoardRequested += (_, _) => board = true;
+        dock.PreviousRequested += (_, _) => prev = true;
+        dock.NextRequested += (_, _) => next = true;
+        dock.PenRequested += (_, _) => pen = true;
+        dock.ColorRequested += (_, _) => color = true;
+        dock.EndShowRequested += (_, _) => end = true;
+
+
+        Click(dock, "BoardButton");
+        Click(dock, "PrevButton");
+        Click(dock, "NextButton");
+        Click(dock, "PenButton");
+        Click(dock, "ColorButton");
+        Click(dock, "EndButton");
+        Check("dock board event", board);
+        Check("dock prev event", prev);
+        Check("dock next event", next);
+        Check("dock pen event", pen);
+        Check("dock color event", color);
+        Check("dock end event", end);
+
+        var penDock = new PenDockWindow(layout, engine);
+        Click(penDock, "Preset2");
+        Check("pen preset red", engine.Style.Color == InkColor.Red);
+        Click(penDock, "Width3");
+        Check("pen width 16", Math.Abs(engine.Style.Width - 16) < 0.01);
+
+        var boardWindow = new BoardWindow(layout, engine);
+        engine.PointerDown(1, 10, 10);
+        engine.PointerMove(1, 120, 80);
+        engine.PointerUp(1);
+        int before = engine.Document.Current.Strokes.Count;
+        Click(boardWindow, "UndoButton");
+        Check("board undo removes stroke", engine.Document.Current.Strokes.Count == before - 1);
+
+        Click(boardWindow, "EraserButton");
+        Check("board eraser toggles tool", engine.Tool == InkTool.Eraser);
+
+        engine.Document.AddPageAfterCurrent();
+        var menu = new PageMenuWindow(layout, engine);
+        menu.Prepare();
+        var items = menu.FindName("ItemsPanel") as System.Windows.Controls.WrapPanel;
+        Check("page menu item count", items is not null && items.Children.Count == engine.Document.PageCount);
+
+        Console.WriteLine("SELFTEST " + (failures == 0 ? "PASS" : "FAIL") + " failures=" + failures);
+        return failures;
     }
 
     private static InkEngine BuildInk()

@@ -29,6 +29,7 @@ public sealed class SlideshowHost : IDisposable
     private ColorPanelWindow? _colorPanel;
     private ClearSliderWindow? _clearSlider;
     private PageMenuWindow? _pageMenu;
+    private PenOptionsWindow? _penOptions;
     private DispatcherTimer? _boardAnim;
     private bool _boardOpen;
     private bool _nativePenOn;
@@ -53,6 +54,7 @@ public sealed class SlideshowHost : IDisposable
         _dock.PreviousRequested += (_, _) => { if (_bridge.CanNavigate) _bridge.Previous(); };
         _dock.NextRequested += (_, _) => { if (_bridge.CanNavigate) _bridge.Next(); };
         _dock.PenRequested += (_, _) => ToggleNativePen();
+        _dock.PenMenuRequested += (_, _) => OpenPenMenu();
         _dock.BoardRequested += (_, _) => ToggleBoard();
         _dock.EndShowRequested += (_, _) => { if (_bridge.CanNavigate) _bridge.ExitShow(); };
 
@@ -210,13 +212,14 @@ public sealed class SlideshowHost : IDisposable
     }
 
     private bool IsPopupVisible() =>
-        (_pageMenu?.IsVisible ?? false) || (_colorPanel?.IsVisible ?? false) || (_clearSlider?.IsVisible ?? false);
+        (_pageMenu?.IsVisible ?? false) || (_colorPanel?.IsVisible ?? false) || (_clearSlider?.IsVisible ?? false) || (_penOptions?.IsVisible ?? false);
 
     private void HidePopups()
     {
         _pageMenu?.Hide();
         _colorPanel?.Hide();
         _clearSlider?.Hide();
+        _penOptions?.Hide();
     }
 
     private void TogglePageMenu()
@@ -237,6 +240,51 @@ public sealed class SlideshowHost : IDisposable
         _pageMenu.Open();
         _stack.BringToFront();
         Log.Info("page menu opened");
+    }
+
+    private void OpenPenMenu()
+    {
+        if (!_bridge.CanNavigate) return;
+        if (_penOptions is null)
+        {
+            _penOptions = new PenOptionsWindow(_layout);
+            _penOptions.OptionChosen += option =>
+            {
+                _penOptions.Hide();
+                ApplyPenOption(option);
+            };
+            _stack.Add(_penOptions);
+        }
+
+        _penOptions.Open();
+        _stack.MoveToTop(_penOptions);
+        _stack.BringToFront();
+    }
+
+    private void ApplyPenOption(string option)
+    {
+        switch (option)
+        {
+            case "pen":
+                _bridge.SetNativePointer(2);
+                _bridge.SetNativePenColor(_ink.Style.Color);
+                _nativePenOn = true;
+                _dock?.SetPenActive(true);
+                break;
+            case "eraser":
+                _bridge.SetNativePointer(3);
+                _nativePenOn = false;
+                _dock?.SetPenActive(false);
+                break;
+            case "arrow":
+                _bridge.SetNativePointer(1);
+                _nativePenOn = false;
+                _dock?.SetPenActive(false);
+                break;
+            case "color":
+                OpenColorPanel(_layout.MainDock);
+                break;
+        }
     }
 
     private void ToggleNativePen()
@@ -380,6 +428,7 @@ public sealed class SlideshowHost : IDisposable
         _clearSlider?.Hide();
         _colorPanel?.Hide();
         _pageMenu?.Hide();
+        _penOptions?.Hide();
 
         if (_board is null) return;
 
@@ -409,6 +458,7 @@ public sealed class SlideshowHost : IDisposable
         _processPoll.Stop();
         _board?.Close();
         _pageMenu?.Close();
+        _penOptions?.Close();
         _leftMargin?.Close();
         _rightMargin?.Close();
         _dock?.Close();

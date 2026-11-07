@@ -18,5 +18,6 @@ public interface ISlideshowBridge
 
     bool NativePenSupported { get; }
     void SetNativePen(bool enabled);
+    void SetNativePointer(int pointerType);
     void SetNativePenColor(InkColor color);
 }

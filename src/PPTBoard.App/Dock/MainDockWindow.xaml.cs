@@ -1,6 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using PPTBoard.App.Host;
 using PPTBoard.Core.Geometry;
 using PPTBoard.Core.Models;
@@ -15,6 +17,9 @@ public partial class MainDockWindow : OverlayWindow
     public event EventHandler? PenRequested;
     public event EventHandler? BoardRequested;
     public event EventHandler? EndShowRequested;
+    public event EventHandler? PenMenuRequested;
+
+    private bool _penLongPress;
 
     public MainDockWindow(LayoutSpec layout)
     {
@@ -22,6 +27,21 @@ public partial class MainDockWindow : OverlayWindow
         Left = layout.MainDock.X;
         Top = layout.MainDock.Y;
         MouseLeftButtonDown += (_, e) => Log.Info($"dock mouse down at {e.GetPosition(this)}");
+
+        var hold = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+        hold.Tick += (_, _) =>
+        {
+            hold.Stop();
+            _penLongPress = true;
+            PenMenuRequested?.Invoke(this, EventArgs.Empty);
+        };
+        PenButton.PreviewMouseLeftButtonDown += (_, _) =>
+        {
+            _penLongPress = false;
+            hold.Start();
+        };
+        PenButton.PreviewMouseLeftButtonUp += (_, _) => hold.Stop();
+        PenButton.MouseLeave += (_, _) => hold.Stop();
     }
 
     public void SetColor(InkColor color)
@@ -62,7 +82,16 @@ public partial class MainDockWindow : OverlayWindow
     private void OnColorClick(object sender, RoutedEventArgs e) => ColorRequested?.Invoke(this, EventArgs.Empty);
     private void OnPrevClick(object sender, RoutedEventArgs e) => PreviousRequested?.Invoke(this, EventArgs.Empty);
     private void OnNextClick(object sender, RoutedEventArgs e) => NextRequested?.Invoke(this, EventArgs.Empty);
-    private void OnPenClick(object sender, RoutedEventArgs e) => PenRequested?.Invoke(this, EventArgs.Empty);
+    private void OnPenClick(object sender, RoutedEventArgs e)
+    {
+        // 长按已经弹过菜单时，抬起产生的 Click 不再切换笔
+        if (_penLongPress)
+        {
+            _penLongPress = false;
+            return;
+        }
+        PenRequested?.Invoke(this, EventArgs.Empty);
+    }
     private void OnBoardClick(object sender, RoutedEventArgs e)
     {
         Log.Info("dock board clicked");

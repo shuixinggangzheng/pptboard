@@ -126,7 +126,9 @@ public sealed class WpsBridge : ISlideshowBridge
 
     public void ExitShow() => InvokeView(view => view.Exit());
 
-    public void SetNativePen(bool enabled) => InvokeView(view => view.PointerType = enabled ? 2 : 1);
+    public void SetNativePen(bool enabled) => SetNativePointer(enabled ? 2 : 1);
+
+    public void SetNativePointer(int pointerType) => InvokeView(view => view.PointerType = pointerType);
 
     public void SetNativePenColor(InkColor color)
     {
