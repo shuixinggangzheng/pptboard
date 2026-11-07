@@ -92,6 +92,13 @@
 12. 退出放映时清空白板笔迹：PollShow 检测到放映从运行变停止时，CloseBoard + InkDocument.ResetAll（只留一页空白）；再次放映从空白页开始。新增 ResetAll 单测（17 项 Ink 测试通过）。
 13. 再点 dock 颜色点关闭面板：给全屏点击层用 SetWindowRgn 挖掉主 dock 矩形，颜色点恢复可点；ColorRequested 在面板可见时直接 Hide。隐藏桌面验证：hitDock=主 dock（不是点击层）、面板打开后 Toggle → visible=False。
 
+## 用户反馈修复（第六轮）
+
+14. PowerPoint 里等一会 dock 消失：COM 在 Office 忙时可能短暂掉线，单次 PollShow=false 就把 dock 淡出。修复：
+    - ShowWindowProbe 改为按进程名 wpp/POWERPNT 查找全屏窗口（类名/标题变化也能认），COM 掉线时窗口兜底保底；
+    - PollShow 连续 3 次（约 0.9s）检测不到才确认结束并隐藏，单次抖动不再闪掉 dock。
+    - 用 FakeSlideshowBridge 在隐藏桌面跑了 12s 生命周期：0.6s 的假掉线没有隐藏，9s 后连续 3 次才 HideDock 并清空白板。
+
 ## 待办
 
 - 真实桌面/一体机端到端验收（放映、触控、焦点、退出、置顶）

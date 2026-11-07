@@ -40,6 +40,7 @@ public sealed class SlideshowHost : IDisposable
     private string? _lastBridgeDiagnostics;
     private bool _windowFallbackLogged;
     private bool _wasShowRunning;
+    private int _notRunningTicks;
     private int _wpsMissingTicks;
     private bool _disposed;
 
@@ -188,15 +189,27 @@ public sealed class SlideshowHost : IDisposable
             }
         }
 
-        if (!running && _wasShowRunning)
+        if (running)
         {
-            CloseBoard(immediate: true);
-            _ink.Document.ResetAll();
-            Log.Info("show ended, whiteboard cleared");
+            if (!_wasShowRunning) Log.Info("show started");
+            _wasShowRunning = true;
+            _notRunningTicks = 0;
         }
-        _wasShowRunning = running;
+        else if (_wasShowRunning)
+        {
+            // 连续 3 次（约 0.9s）都检测不到才认为放映结束，避免 COM 抖动把 dock 闪掉
+            _notRunningTicks++;
+            if (_notRunningTicks >= 3)
+            {
+                Log.Info("show ended (confirmed), whiteboard cleared");
+                _wasShowRunning = false;
+                _notRunningTicks = 0;
+                CloseBoard(immediate: true);
+                _ink.Document.ResetAll();
+            }
+        }
 
-        bool shouldShow = Log.DebugShow || running;
+        bool shouldShow = Log.DebugShow || running || (_wasShowRunning && _notRunningTicks > 0);
 
         if (_dock is not null)
         {
@@ -228,6 +241,7 @@ public sealed class SlideshowHost : IDisposable
     private void PollProcess()
     {
         if (_disposed || Log.DebugShow) return;
+        if (Environment.GetEnvironmentVariable("PPTBOARD_DEBUG_FAKE_SHOW") == "1") return;
 
         bool wpsRunning = Process.GetProcessesByName("wpp").Length > 0;
         bool powerpointRunning = Process.GetProcessesByName("POWERPNT").Length > 0;
