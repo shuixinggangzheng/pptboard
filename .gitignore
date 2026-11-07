@@ -1,0 +1,13 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+artifacts/
+publish/
+logs/
+*.log
+probe-output/
+TestResults/
+artifacts/
+probe/output/

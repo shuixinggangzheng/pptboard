@@ -1,0 +1,281 @@
+using System.Diagnostics;
+using System.Windows;
+using System.Windows.Media.Animation;
+using System.Windows.Threading;
+using PPTBoard.App.Board;
+using PPTBoard.App.Dock;
+using PPTBoard.Core.Contracts;
+using PPTBoard.Core.Geometry;
+using PPTBoard.Ink;
+
+namespace PPTBoard.App.Host;
+
+/// <summary>浮层生命周期：检测放映、显示/隐藏 dock、画板开关（后续接入）。</summary>
+public sealed class SlideshowHost : IDisposable
+{
+    private readonly LayoutSpec _layout;
+    private readonly InkEngine _ink;
+    private readonly ISlideshowBridge _bridge;
+    private readonly WindowStack _stack = new();
+    private readonly DispatcherTimer _showPoll = new() { Interval = TimeSpan.FromMilliseconds(300) };
+    private readonly DispatcherTimer _processPoll = new() { Interval = TimeSpan.FromMilliseconds(1000) };
+
+    private MainDockWindow? _dock;
+    private BoardWindow? _board;
+    private MarginCatcher? _leftMargin;
+    private MarginCatcher? _rightMargin;
+    private DispatcherTimer? _boardAnim;
+    private bool _boardOpen;
+    private int _wpsMissingTicks;
+    private bool _disposed;
+
+    public SlideshowHost(LayoutSpec layout, InkEngine ink, ISlideshowBridge bridge)
+    {
+        _layout = layout;
+        _ink = ink;
+        _bridge = bridge;
+    }
+
+    public Task<bool> InitializeAsync() => Task.FromResult(true);
+
+    public void Start()
+    {
+        Log.Info("host start");
+        _dock = new MainDockWindow(_layout);
+        Log.Info("dock created");
+        _dock.ColorRequested += (_, _) => { };
+        _dock.PreviousRequested += (_, _) => { if (_bridge.CanNavigate) _bridge.Previous(); };
+        _dock.NextRequested += (_, _) => { if (_bridge.CanNavigate) _bridge.Next(); };
+        _dock.PenRequested += (_, _) => { };
+        _dock.BoardRequested += (_, _) => ToggleBoard();
+        _dock.EndShowRequested += (_, _) => { if (_bridge.IsAvailable) _bridge.ExitShow(); };
+
+        _dock.SetNavigable(_bridge.CanNavigate);
+        _dock.SetPenSupported(_bridge.NativePenSupported);
+        _dock.SetColor(_ink.Style.Color);
+        _dock.SetBoardActive(false);
+
+        _stack.Add(_dock);
+
+        _showPoll.Tick += (_, _) => PollShow();
+        _processPoll.Tick += (_, _) => PollProcess();
+        _showPoll.Start();
+        _processPoll.Start();
+
+        if (Log.DebugShow)
+        {
+            Log.Info("debug show dock");
+            ShowDock();
+            Log.Info($"dock visible={_dock.IsVisible} left={_dock.Left} top={_dock.Top} opacity={_dock.Opacity}");
+        }
+
+        if (Environment.GetEnvironmentVariable("PPTBOARD_DEBUG_BOARD") == "1")
+        {
+            Log.Info("debug open board");
+            OpenBoard();
+        }
+
+        Log.Info("host start done");
+    }
+
+    private void PollShow()
+    {
+        if (_disposed) return;
+        bool shouldShow = Log.DebugShow || _bridge.IsShowRunning;
+
+        if (shouldShow)
+        {
+            ShowDock();
+        }
+        else
+        {
+            HideDock();
+        }
+    }
+
+    private void PollProcess()
+    {
+        if (_disposed || Log.DebugShow) return;
+
+        if (Process.GetProcessesByName("wpp").Length > 0)
+        {
+            _wpsMissingTicks = 0;
+            return;
+        }
+
+        if (++_wpsMissingTicks >= 2)
+        {
+            Log.Info("wpp.exe gone, shutdown");
+            Application.Current.Shutdown();
+        }
+    }
+
+    private void ShowDock()
+    {
+        if (_dock is null || _dock.IsVisible) return;
+
+        Log.Info("ShowDock");
+        _dock.Left = _layout.MainDock.X;
+        _dock.Top = Log.DebugShow ? _layout.MainDock.Y - 140 : _layout.MainDock.Y;
+        _dock.Opacity = 1;
+        _dock.Show();
+        _stack.BringToFront();
+
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(_dock).Handle;
+        bool rectOk = Interop.NativeMethods.GetWindowRect(hwnd, out var rect);
+        Log.Info($"dock shown hwnd={hwnd} rectOk={rectOk} rect=({rect.Left},{rect.Top})-({rect.Right},{rect.Bottom}) topmost={_dock.Topmost} opacity={_dock.Opacity}");
+
+        var probe = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
+        probe.Tick += (_, _) =>
+        {
+            probe.Stop();
+            bool ok = Interop.NativeMethods.GetWindowRect(hwnd, out var r2);
+            Log.Info($"dock after800 rectOk={ok} rect=({r2.Left},{r2.Top})-({r2.Right},{r2.Bottom}) vis={Interop.NativeMethods.IsWindowVisible(hwnd)} opacity={_dock.Opacity}");
+        };
+        probe.Start();
+    }
+
+    private void HideDock()
+    {
+        CloseBoard(immediate: true);
+        if (_dock is null || !_dock.IsVisible) return;
+        Log.Info("HideDock");
+        var animation = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(140));
+        animation.Completed += (_, _) => _dock.Hide();
+        _dock.BeginAnimation(Window.OpacityProperty, animation);
+    }
+
+    private void AnimateBoard(double from, double to, int milliseconds, bool easeOut, Action completed)
+    {
+        if (_board is null) return;
+        _boardAnim?.Stop();
+        var sw = Stopwatch.StartNew();
+        _board.Top = from;
+        var timer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(15) };
+        _boardAnim = timer;
+        timer.Tick += (_, _) =>
+        {
+            double t = Math.Clamp(sw.Elapsed.TotalMilliseconds / milliseconds, 0, 1);
+            double eased = easeOut ? 1 - Math.Pow(1 - t, 3) : t * t * t;
+            _board.Top = from + (to - from) * eased;
+            if (t >= 1)
+            {
+                timer.Stop();
+                _boardAnim = null;
+                _board.Top = to;
+                completed();
+            }
+        };
+        timer.Start();
+    }
+
+    private void ToggleBoard()
+    {
+        if (_boardOpen) CloseBoard(immediate: false);
+        else OpenBoard();
+    }
+
+    private void OpenBoard()
+    {
+        if (_boardOpen || _dock is null) return;
+        _boardOpen = true;
+
+        var boardRect = _layout.Board;
+        var leftRect = new RectD(0, 0, boardRect.X, _layout.ScreenHeight);
+        var rightRect = new RectD(boardRect.Right, 0, _layout.ScreenWidth - boardRect.Right, _layout.ScreenHeight);
+
+        if (_leftMargin is null)
+        {
+            _leftMargin = new MarginCatcher(leftRect);
+            _leftMargin.Pressed += (_, _) =>
+            {
+                Log.Info("left margin pressed -> close board");
+                CloseBoard(immediate: false);
+            };
+            _stack.AddFirst(_leftMargin);
+
+            _rightMargin = new MarginCatcher(rightRect);
+            _rightMargin.Pressed += (_, _) =>
+            {
+                Log.Info("right margin pressed -> close board");
+                CloseBoard(immediate: false);
+            };
+            _stack.AddFirst(_rightMargin);
+        }
+
+        _leftMargin.Show();
+        _rightMargin!.Show();
+
+        if (_board is null)
+        {
+            _board = new BoardWindow(_layout, _ink);
+            _board.CollapseRequested += (_, _) => CloseBoard(immediate: false);
+            _stack.Add(_board);
+        }
+
+        _board.BeginAnimation(Window.TopProperty, null);
+        _board.Top = -_layout.Board.Height;
+        _board.Show();
+        AnimateBoard(-_layout.Board.Height, 0, 260, easeOut: true, () =>
+        {
+            Log.Info("board slide done");
+            _stack.BringToFront();
+        });
+
+        _dock.SetBoardActive(true);
+        _stack.BringToFront();
+        Log.Info($"board opened rect={_layout.Board}");
+
+        var probe = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+        probe.Tick += (_, _) =>
+        {
+            probe.Stop();
+            if (_board is null) return;
+            var boardHwnd = new System.Windows.Interop.WindowInteropHelper(_board).Handle;
+            Interop.NativeMethods.GetWindowRect(boardHwnd, out var r);
+            var pt = new Interop.NativeMethods.POINT { X = r.Left + 44, Y = r.Bottom - 25 };
+            var hit = Interop.NativeMethods.WindowFromPoint(pt);
+            Log.Info($"board after500 top={_board.Top} rect=({r.Left},{r.Top})-({r.Right},{r.Bottom}) boardHwnd={boardHwnd} hitAtGrayBar={hit}");
+        };
+        probe.Start();
+    }
+
+    private void CloseBoard(bool immediate)
+    {
+        if (!_boardOpen) return;
+        _boardOpen = false;
+        _ink.CancelActivePointers();
+        _dock?.SetBoardActive(false);
+
+        if (_board is null) return;
+
+        if (immediate)
+        {
+            _board.BeginAnimation(Window.TopProperty, null);
+            _board.Hide();
+            _board.Top = -_layout.Board.Height;
+            _leftMargin?.Hide();
+            _rightMargin?.Hide();
+            return;
+        }
+
+        AnimateBoard(_board.Top, -_layout.Board.Height, 220, easeOut: false, () =>
+        {
+            _board.Top = -_layout.Board.Height;
+            _board.Hide();
+            _leftMargin?.Hide();
+            _rightMargin?.Hide();
+        });
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        _showPoll.Stop();
+        _processPoll.Stop();
+        _board?.Close();
+        _leftMargin?.Close();
+        _rightMargin?.Close();
+        _dock?.Close();
+    }
+}

@@ -1,0 +1,8 @@
+<host:OverlayWindow x:Class="PPTBoard.App.Boot.LoadingWindow"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:host="clr-namespace:PPTBoard.App.Host"
+                    xmlns:boot="clr-namespace:PPTBoard.App.Boot"
+                    Width="72" Height="72">
+    <boot:LoadingDiscView x:Name="Disc"/>
+</host:OverlayWindow>

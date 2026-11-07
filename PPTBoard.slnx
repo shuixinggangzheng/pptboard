@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PPTBoard.App/PPTBoard.App.csproj" />
+    <Project Path="src/PPTBoard.Core/PPTBoard.Core.csproj" />
+    <Project Path="src/PPTBoard.Ink/PPTBoard.Ink.csproj" />
+    <Project Path="src/PPTBoard.Wps/PPTBoard.Wps.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PPTBoard.Core.Tests/PPTBoard.Core.Tests.csproj" />
+    <Project Path="tests/PPTBoard.Ink.Tests/PPTBoard.Ink.Tests.csproj" />
+  </Folder>
+</Solution>
