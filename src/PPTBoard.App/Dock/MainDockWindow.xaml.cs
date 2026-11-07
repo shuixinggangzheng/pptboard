@@ -40,6 +40,11 @@ public partial class MainDockWindow : OverlayWindow
         PenButton.IsEnabled = supported;
     }
 
+    public void SetEndEnabled(bool enabled)
+    {
+        EndButton.IsEnabled = enabled;
+    }
+
     public void SetPenActive(bool active)
     {
         PenButton.Background = active

@@ -98,8 +98,10 @@ public sealed class SlideshowHost : IDisposable
 
         if (_dock is not null)
         {
-            _dock.SetNavigable(_bridge.CanNavigate);
-            _dock.SetPenSupported(_bridge.NativePenSupported);
+            bool pptEnabled = !_boardOpen;
+            _dock.SetNavigable(pptEnabled && _bridge.CanNavigate);
+            _dock.SetPenSupported(pptEnabled && _bridge.NativePenSupported);
+            _dock.SetEndEnabled(pptEnabled && _bridge.CanNavigate);
         }
 
         if (!running && _nativePenOn)
@@ -345,6 +347,9 @@ public sealed class SlideshowHost : IDisposable
         _penDock.RaiseTopmost();
 
         _dock.SetBoardActive(true);
+        _dock.SetNavigable(false);
+        _dock.SetPenSupported(false);
+        _dock.SetEndEnabled(false);
         _stack.BringToFront();
         Log.Info($"board opened rect={_layout.Board}");
 
@@ -368,6 +373,9 @@ public sealed class SlideshowHost : IDisposable
         _boardOpen = false;
         _ink.CancelActivePointers();
         _dock?.SetBoardActive(false);
+        _dock?.SetNavigable(_bridge.CanNavigate);
+        _dock?.SetPenSupported(_bridge.NativePenSupported);
+        _dock?.SetEndEnabled(_bridge.CanNavigate);
         _penDock?.Hide();
         _clearSlider?.Hide();
         _colorPanel?.Hide();
