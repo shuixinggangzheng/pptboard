@@ -10,7 +10,7 @@
             <RowDefinition Height="56"/>
         </Grid.RowDefinitions>
 
-        <board:InkLayer x:Name="Ink" Grid.Row="0" IsHitTestVisible="False"/>
+        <board:InkLayer x:Name="Ink" Grid.Row="0" IsHitTestVisible="False" ClipToBounds="True"/>
 
         <Border Grid.Row="1" Background="{StaticResource GrayBarBrush}">
             <Grid>

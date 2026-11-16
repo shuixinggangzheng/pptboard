@@ -1,6 +1,6 @@
 # PPTBoard 进度与验收状态
 
-更新：2026-11-07（用户确认可用）
+更新：2026-11-16（0.1.2 白板输入修复）
 
 ## 已实现
 
@@ -105,9 +105,21 @@
 
 ## 安装包
 
-- `PPTBoard-0.1.1-setup.exe`（NSIS，43.2 MB，无管理员，写入 HKCU 自启 + 应用卸载项）
+- `PPTBoard-0.1.2-setup.exe`（.NET Framework WinForms，57.4 MB，无管理员，写入 HKCU 自启 + 应用卸载项）
 - 已在本机静默安装/卸载各验证一次；当前本机为 setup 安装态。
 - 开发机上的 WPS Office 已按要求卸载（安装目录、自启项、卸载项、COM 类、快捷方式、设置项），`%LOCALAPPDATA%\Kingsoft\WPS Cloud Files` 用户云缓存保留。
+
+## 0.1.2 白板笔/触摸失效修复（2026-11-16）
+
+依据外部报告《PPTBoard-白板笔失效-调查与修复报告》，选择方案 A（WPF Stylus/Touch/Mouse，客户端 DIP）而不是方案 B（启用进程级 Pointer Stack）：
+
+- 方案 B 会改变整个进程的输入模型，dock 长按、色相环、PopoverCatcher、WPS 前台交互都要回归，而且仍要补 P1-1/P1-2；方案 A 只改白板输入适配层，风险面最小。
+- 根因：白板把 e.StylusDevice != null 的鼠标提升事件丢弃，而 WPF 默认 legacy 输入栈下 WM_POINTER 收不到，两条通道同时失效。
+- 改动：
+  - BoardWindow.xaml.cs：接 StylusDown/Move/Up/LostStylusCapture、TouchDown/Move/Up/LostTouchCapture、鼠标兜底；坐标全部用 GetPosition/GetStylusPoints/GetTouchPoint 的客户区 DIP；pointerId 用 0x10000|StylusDevice.Id、0x20000|TouchDevice.Id、0x7FFF 隔离；Stylus/Touch 各自 capture，丢失时 cancel；删除 WM_POINTER 钩子；DrawingHeight 改用 Ink.ActualHeight；每类输入加 down/up 日志。
+  - BoardWindow.xaml：InkLayer ClipToBounds="True"。
+- 验证：dotnet build 0 警告 0 错误；Core 8 + Ink 17 单测通过；--selftest 通过。开发机无触摸屏/笔，真机多点触控仍需按报告 8.2 在一体机上验（落点、长划线、四指、笔手混用、橡皮、弹层、灰条、100/125/150%、长按笔、4:3/16:9）。
+- 版本 0.1.2，setup/zip 重新打包。
 
 ## 0.1.1（只在放映时显示 dock）
 
@@ -117,6 +129,6 @@
 
 ## 待办
 
-- 真实桌面/一体机端到端验收（放映、触控、焦点、退出、置顶）
-- 复制到 F:\PPTBoard，推 GitHub 公开仓库（MIT）
-- 长按笔菜单在触摸屏上的手感（当前 500ms）
+- 一体机 0.1.2 真机验收：Stylus/Touch/多指、150% 落点、长按笔回归（报告 8.2）
+- 报告 6 节 P2 #4：白板橡皮二次点击弹“清空滑条”是否改为独立入口（待用户决定）
+- 报告 6 节 P2 #5：OverlayWindow.SetClickThrough 死代码清理

@@ -12,3 +12,4 @@ TestResults/
 artifacts/
 probe/output/
 artifacts/
+build/setup_sfx/

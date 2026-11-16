@@ -165,7 +165,8 @@ WPS 放映时，在屏幕上浮出一套半透明 dock 与一块可翻页的白�
 
 ### 7.2 绘制
 
-- 输入：WM_POINTER（触摸、笔、鼠标统一），每根手指/笔一条独立笔迹，支持同时书写（Q8-B）。
+- 输入：WPF **Stylus（笔）+ Touch（手指）+ Mouse（真鼠标）** 三套事件，坐标一律用客户区 DIP；每根手指/笔一条独立笔迹，支持同时书写（Q8-B）。
+  - 2026-11-16 修订：原 `WM_POINTER` 钩子在 WPF 默认 legacy 输入栈下收不到消息，白板一笔都画不出来；改用 WPF 输入事件（方案 A，见第十一节）。
 - 笔迹：圆头、圆角连接、抗锯齿；当前颜色、粗细、透明度在落笔瞬间固化，之后改设置不影响已画内容。
 - 粗细：3/6/10/16/24 五档 + 1–32 无级滑杆（吸附档位 ±2）；默认 6。
 - 颜色：默认黑色；3 个预设（红/蓝/黑）+ 自定义。
@@ -366,7 +367,7 @@ WPS 放映时，在屏幕上浮出一套半透明 dock 与一块可翻页的白�
           Dock/MainDockWindow.xaml(.cs)
           Dock/ColorPanelWindow.xaml(.cs)
           Board/BoardWindow.xaml(.cs)    # 不透明窗口 + 自绘墨迹
-          Board/BoardInput.cs            # WM_POINTER 钩子 → InkEngine
+          Board/BoardWindow.xaml.cs      # WPF Stylus/Touch/Mouse 输入适配 → InkEngine
           Board/PenDockWindow.xaml(.cs)
           Board/PageBoxWindow.xaml(.cs)
           Board/PageMenuWindow.xaml(.cs)
@@ -446,7 +447,7 @@ WPS 放映时，在屏幕上浮出一套半透明 dock 与一块可翻页的白�
 1. WPS COM 能力：✅ 已实测（见 §15）。风险降为：GetActiveObject 在 WPS 冷启动瞬间可能失败，桥接层需重试并回退 ROT 文件 moniker。
 2. WPS 全屏窗口识别：✅ 已确认 wpp.exe / Qt5QWindowIcon / 标题前缀；COM 仍是主路径。
 3. 墨迹保留提示：View.Exit() 后 WPS 是否弹“保留墨迹”；若弹，需决定拦截还是改为模拟按键。
-4. WPF WM_POINTER 多指：需验证 HwndSource 钩子能拿到全部触点且不被 WPF 触控提升吞掉；不行则退到 WM_TOUCH + GetTouchInputInfo。
+4. ~~WPF WM_POINTER 多指~~：✅ 2026-11-16 已确认 legacy 输入栈下 WM_POINTER 不可用；改为 WPF Stylus/Touch/Mouse（方案 A），坐标客户区 DIP、每设备 pointerId、Stylus/Touch capture，WM_POINTER 分支删除。
 5. 半透明多窗口性能：页面菜单 320×1080 为分层窗口（软件渲染），缩略图重绘时是否卡顿；必要时菜单改为“不透明深色”。
 6. 一体机 DPI：目标机若是 125%，主 dock 288px 可能放不下 6 个 40px 控件；运行期按内容宽取 max。
 7. WPS 更新：WPS 版本升级可能改 COM/窗口行为；验收时记录版本号。
@@ -496,7 +497,7 @@ WPS 放映时，在屏幕上浮出一套半透明 dock 与一块可翻页的白�
 | M0 | 装 WPS，写 COM 探针，验证 §17.1–17.2 | 探针报告 + 降级决策 |
 | M1 | C 监听器 + install/uninstall + 自启 | 可安装、能拉起空壳 |
 | M2 | WPF 壳：loading、放映检测、dock、置顶、穿透 | 能看能点 |
-| M3 | 画板 + WM_POINTER 多指墨迹 | 能写 |
+| M3 | 画板 + WPF Stylus/Touch 多指墨迹 | 能写 |
 | M4 | 画笔 dock、颜色面板、橡皮、撤销、清空 | 能改能擦 |
 | M5 | 页面系统、页面框、右侧菜单、缩略图 | 能翻页 |
 | M6 | 视觉打磨、动效、验收 15 项、打包 zip | 可验收版本 |
