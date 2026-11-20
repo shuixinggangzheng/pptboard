@@ -26,7 +26,7 @@ public class InkEngineTests
         var stroke = e.Document.Current.Strokes[0];
         Assert.False(stroke.IsActive);
         Assert.Equal(3, stroke.Points.Count);
-        Assert.Equal(InkColor.Black, stroke.Color);
+        Assert.Equal(InkColor.Red, stroke.Color);
         Assert.Equal(6, stroke.Width);
     }
 
@@ -57,7 +57,7 @@ public class InkEngineTests
         e.PointerMove(1, 60, 10);
         e.PointerUp(1);
 
-        Assert.Equal(InkColor.Black, e.Document.Current.Strokes[0].Color);
+        Assert.Equal(InkColor.Red, e.Document.Current.Strokes[0].Color);
         Assert.Equal(6, e.Document.Current.Strokes[0].Width);
     }
 

@@ -7,7 +7,7 @@ public readonly record struct PenStyle(InkColor Color, double Width)
     public const double MaxWidth = 32;
     public static readonly double[] WidthPresets = [3, 6, 10, 16, 24];
 
-    public static readonly PenStyle Default = new(InkColor.Black, 6);
+    public static readonly PenStyle Default = new(InkColor.Red, 6);
 
     public PenStyle Clamp() => this with { Width = Math.Clamp(Width, MinWidth, MaxWidth) };
 }

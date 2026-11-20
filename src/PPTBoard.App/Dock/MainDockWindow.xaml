@@ -12,7 +12,7 @@
         </Border.Effect>
         <StackPanel Orientation="Horizontal" Margin="13,0" VerticalAlignment="Center">
             <Button x:Name="ColorButton" Style="{StaticResource DockButtonStyle}" Click="OnColorClick" ToolTip="画笔颜色">
-                <Ellipse x:Name="ColorDot" Width="20" Height="20" Fill="Black" Stroke="#66FFFFFF" StrokeThickness="1.5"/>
+                <Ellipse x:Name="ColorDot" Width="20" Height="20" Fill="#FFE53935" Stroke="#66FFFFFF" StrokeThickness="1.5"/>
             </Button>
             <Button x:Name="PrevButton" Style="{StaticResource DockButtonStyle}" Margin="4,0,0,0" Click="OnPrevClick" ToolTip="上一页">
                 <Path Style="{StaticResource IconPathStyle}" Data="M12,4 L5,10 L12,16"/>

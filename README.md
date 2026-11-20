@@ -27,13 +27,13 @@ WPS 演示 / Microsoft PowerPoint 的放映浮层：底部半透明 dock + 可�
 
     pwsh build/build.ps1
 
-产物：artifacts/PPTBoard-0.1.2-win-x64.zip
+产物：artifacts/PPTBoard-0.1.3-win-x64.zip
 
 ## 安装
 
 推荐用 setup 安装包：
 
-    PPTBoard-0.1.2-setup.exe
+    PPTBoard-0.1.3-setup.exe
 
 双击后按提示安装到 `%LOCALAPPDATA%\PPTBoard`（无需管理员），会自动写开机自启并启动监听器；卸载在“设置 → 应用 → PPTBoard”。
 
@@ -43,9 +43,9 @@ WPS 演示 / Microsoft PowerPoint 的放映浮层：底部半透明 dock + 可�
 
 当前 setup 由 installer/Setup.cs（.NET Framework 4.x WinForms，内嵌 payload.zip）编译：
 
-    # 1) 把 artifacts/PPTBoard 0.1.2 应用 + uninstall.exe 打成 payload.zip
+    # 1) 把 artifacts/PPTBoard 0.1.3 应用 + uninstall.exe 打成 payload.zip
     # 2) 用 Framework csc 编译（/target:winexe /resource:payload.zip,payload.zip）
-    # 输出 artifacts/PPTBoard-0.1.2-setup.exe
+    # 输出 artifacts/PPTBoard-0.1.3-setup.exe
 
 旧版 installer/setup.nsi 保留作 NSIS 备用。
 
@@ -59,7 +59,7 @@ WPS 演示 / Microsoft PowerPoint 的放映浮层：底部半透明 dock + 可�
 ## 仓库
 
 - GitHub：https://github.com/shuixinggangzheng/pptboard
-- 发布包：F:\PPTBoard\dist\PPTBoard-0.1.2-win-x64.zip（暂存，验收后定版）
+- 发布包：F:\PPTBoard\dist\PPTBoard-0.1.3-win-x64.zip（暂存，验收后定版）
 
 ## 许可证
 

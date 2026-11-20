@@ -11,7 +11,7 @@ namespace PPTBoardSetup
 {
     internal static class Program
     {
-        internal const string Version = "0.1.2";
+        internal const string Version = "0.1.3";
 
         [STAThread]
         private static void Main(string[] args)

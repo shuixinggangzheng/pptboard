@@ -1,6 +1,6 @@
 # PPTBoard 进度与验收状态
 
-更新：2026-11-16（0.1.2 白板输入修复）
+更新：2026-11-20（0.1.3 默认红色）
 
 ## 已实现
 
@@ -105,7 +105,7 @@
 
 ## 安装包
 
-- `PPTBoard-0.1.2-setup.exe`（.NET Framework WinForms，57.4 MB，无管理员，写入 HKCU 自启 + 应用卸载项）
+- `PPTBoard-0.1.3-setup.exe`（.NET Framework WinForms，57.4 MB，无管理员，写入 HKCU 自启 + 应用卸载项）
 - 已在本机静默安装/卸载各验证一次；当前本机为 setup 安装态。
 - 开发机上的 WPS Office 已按要求卸载（安装目录、自启项、卸载项、COM 类、快捷方式、设置项），`%LOCALAPPDATA%\Kingsoft\WPS Cloud Files` 用户云缓存保留。
 
@@ -126,6 +126,12 @@
 - 编辑/最大化的 PowerPoint 窗口也有屏幕大小，之前的“按进程找全屏窗口”会误判成放映；现在要求放映窗口无标题栏（WS_CAPTION=0）或类名明确是 screenClass / WPS 放映窗。
 - 启动时如果没有正在放映，不显示 loading、不创建可见窗口；等 F5 放映后再显示 dock。
 - 版本 0.1.1，setup/zip 重新打包。
+
+## 0.1.3 默认颜色改为红色（2026-11-20）
+
+- PenStyle.Default 从黑色改为红色；主 dock 颜色点初始填充改为红色。
+- 受影响的默认落笔、主 dock 色点、画笔 dock 选中态、颜色面板初始色、原生笔颜色都随 PenStyle.Default 走。
+- 单测 InkEngine 默认颜色断言同步改为 Red；版本 0.1.3，setup/zip 重新打包。
 
 ## 待办
 
